@@ -1,0 +1,11 @@
+date,region,category,product,sales,quantity,profit
+2024-01-01,USA,Electronics,Laptop,1200,2,300
+2024-01-01,UK,Furniture,Chair,450,5,120
+2024-01-02,USA,Clothing,Shirt,80,4,25
+2024-01-02,Canada,Electronics,Phone,800,3,200
+2024-01-03,USA,Furniture,Desk,650,1,180
+2024-01-03,UK,Electronics,Tablet,400,2,100
+2024-01-04,Canada,Clothing,Pants,120,6,35
+2024-01-04,USA,Electronics,Laptop,1200,2,310
+2024-01-05,UK,Furniture,Table,900,2,250
+2024-01-05,Canada,Electronics,Monitor,350,4,90
