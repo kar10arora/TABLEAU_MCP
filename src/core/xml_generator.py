@@ -1,189 +1,368 @@
 """
 Tableau XML workbook generator.
 Safely manipulates .twb files using template injection.
+
+Root cause fix: The entire datasource section (connection, columns, metadata-records,
+object-graph) must be rebuilt from the actual CSV schema so Tableau can connect.
+Simply patching the file path is not enough.
 """
 
-from lxml import etree
-from typing import Dict, List, Optional
 import os
+import hashlib
+import uuid as uuid_mod
+from lxml import etree
+from typing import Dict
 from src.core.uuid_utils import generate_tableau_uuid
 
 
 class TableauXMLCompiler:
     """Compiles Tableau workbooks from JSON blueprints."""
-    
+
     def __init__(self, template_path: str):
-        """
-        Initialize compiler with template.
-        
-        Args:
-            template_path: Path to base .twb template file
-        """
         if not os.path.exists(template_path):
             raise FileNotFoundError(f"Template not found: {template_path}")
-        
+
         self.template_path = template_path
         self.parser = etree.XMLParser(remove_blank_text=False, recover=True)
-    
-    def compile_workbook(self, 
-                        blueprint: Dict, 
-                        output_path: str,
-                        dataset_path: str = None) -> Dict:
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
+    def compile_workbook(self,
+                         blueprint: Dict,
+                         output_path: str,
+                         dataset_path: str = None,
+                         schema: Dict = None) -> Dict:
         """
-        Generate complete .twb workbook from blueprint.
-        
+        Generate a complete .twb workbook from a blueprint.
+
         Args:
-            blueprint: JSON blueprint with sheets configuration
-            output_path: Where to save generated .twb file
-            dataset_path: Path to dataset (for datasource update)
-            
+            blueprint:    JSON blueprint with sheets configuration
+            output_path:  Where to save the generated .twb file
+            dataset_path: Absolute or relative path to the CSV file
+            schema:       Optional schema dict from SchemaProfiler.
+                          When provided the datasource is rebuilt so that
+                          every column Tableau needs is declared correctly.
+
         Returns:
-            dict: {"success": bool, "workbook_path": str, "sheets_created": int}
+            {"success": bool, "workbook_path": str, "sheets_created": int}
         """
-        # Load template
         tree = etree.parse(self.template_path, self.parser)
         root = tree.getroot()
-        
-        # Extract datasource ID
-        datasource_elem = root.find(".//datasources/datasource")
-        if datasource_elem is None:
-            raise ValueError("Template missing datasource element")
-        
-        ds_id = datasource_elem.get("name")
-        
-        # Update dataset path if provided
+
+        # ── 1. Rebuild datasource from real CSV ────────────────────────
         if dataset_path:
-            self._update_datasource_path(root, dataset_path)
-        
-        # Get parent containers
+            abs_path = os.path.abspath(dataset_path)
+            if schema is None:
+                # Auto-profile if no schema provided
+                from src.core.schema_profiler import SchemaProfiler
+                schema = SchemaProfiler().profile_dataset(abs_path)
+            self._rebuild_datasource(root, abs_path, schema)
+
+        # ── 2. Extract the (now correct) datasource id ─────────────────
+        ds_elem = root.find(".//datasources/datasource")
+        if ds_elem is None:
+            raise ValueError("Template missing datasource element")
+        ds_id = ds_elem.get("name")
+
+        # ── 3. Replace worksheets and windows ─────────────────────────
         worksheets_parent = root.find(".//worksheets")
         windows_parent = root.find(".//windows")
-        
         if worksheets_parent is None or windows_parent is None:
             raise ValueError("Template missing worksheets or windows container")
-        
-        # Clear existing sheets
+
         worksheets_parent.clear()
         windows_parent.clear()
         windows_parent.set("source-height", "30")
-        
-        # Generate sheets from blueprint
+
         sheets_created = 0
         for index, sheet in enumerate(blueprint.get("sheets", [])):
             try:
-                # Generate UUIDs
                 sheet_uuid = generate_tableau_uuid()
                 window_uuid = generate_tableau_uuid()
-                
-                # Build worksheet XML
-                worksheet_xml = self._build_worksheet(
+
+                col_field = sheet.get("column_field", "")
+                row_field = sheet.get("row_field", "")
+
+                # Determine datatypes from schema
+                col_datatype, col_role, col_type = self._field_meta(col_field, schema)
+                row_datatype, row_role, row_type = self._field_meta(row_field, schema)
+
+                ws_xml = self._build_worksheet(
                     name=sheet["name"],
                     ds_id=ds_id,
-                    cols=sheet.get("column_field", ""),
-                    rows=sheet.get("row_field", ""),
+                    cols=col_field,
+                    rows=row_field,
+                    col_datatype=col_datatype,
+                    col_role=col_role,
+                    col_type=col_type,
+                    row_datatype=row_datatype,
+                    row_role=row_role,
+                    row_type=row_type,
                     mark_type=sheet.get("mark_type", "Automatic"),
-                    uuid=sheet_uuid
+                    uuid=sheet_uuid,
                 )
-                
-                # Build window XML
-                window_xml = self._build_window(
+                win_xml = self._build_window(
                     name=sheet["name"],
                     uuid=window_uuid,
-                    maximized=(index == 0)  # Maximize first sheet
+                    maximized=(index == 0),
                 )
-                
-                # Inject into tree
-                worksheets_parent.append(etree.fromstring(worksheet_xml, self.parser))
-                windows_parent.append(etree.fromstring(window_xml, self.parser))
-                
+
+                worksheets_parent.append(etree.fromstring(ws_xml, self.parser))
+                windows_parent.append(etree.fromstring(win_xml, self.parser))
                 sheets_created += 1
-                
-            except Exception as e:
-                print(f"Warning: Failed to create sheet '{sheet.get('name')}': {str(e)}")
-                continue
-        
-        # Write final workbook
-        tree.write(output_path, encoding='utf-8', xml_declaration=True)
-        
+
+            except Exception as exc:
+                print(f"Warning: skipped sheet '{sheet.get('name')}': {exc}")
+
+        tree.write(output_path, encoding="utf-8", xml_declaration=True)
+
         return {
             "success": True,
             "workbook_path": output_path,
-            "sheets_created": sheets_created
+            "sheets_created": sheets_created,
         }
-    
-    def _build_worksheet(self, name: str, ds_id: str, cols: str, rows: str, 
-                        mark_type: str, uuid: str) -> str:
-        """Build worksheet XML block safely."""
-        
-        # Construct field references
+
+    # ------------------------------------------------------------------
+    # Datasource rebuild
+    # ------------------------------------------------------------------
+
+    def _rebuild_datasource(self, root, abs_csv_path: str, schema: Dict):
+        """
+        Completely replace the <datasource> element so Tableau can connect to
+        the target CSV and knows about all its columns.
+        """
+        csv_filename = os.path.basename(abs_csv_path)
+        csv_dir = os.path.dirname(abs_csv_path)
+        csv_base = os.path.splitext(csv_filename)[0]          # e.g. "sales_sample"
+
+        # Stable but unique IDs derived from the CSV name
+        ds_name = self._stable_id("federated", csv_filename)
+        conn_name = self._stable_id("textscan", csv_filename)
+        obj_id = self._stable_obj_id(csv_filename)
+
+        ds_caption = csv_base
+        table_ref = f"[{csv_base}#csv]"
+
+        # ── Build column ordinal list from schema ──────────────────────
+        all_columns = []
+        for d in schema.get("dimensions", []):
+            all_columns.append({"name": d["name"], "datatype": "string"})
+        for m in schema.get("measures", []):
+            dt = "integer" if isinstance(m.get("sample_values", [None])[0], int) else "real"
+            all_columns.append({"name": m["name"], "datatype": dt})
+
+        # ── Assemble <datasource> XML as a string then parse ──────────
+        col_ordinals = "\n".join(
+            "<column datatype='{}' name='{}' ordinal='{}' />".format(
+                c["datatype"], c["name"], i
+            )
+            for i, c in enumerate(all_columns)
+        )
+
+        metadata_records = self._build_metadata_records(all_columns, csv_base, obj_id)
+        column_declarations = self._build_column_declarations(all_columns, obj_id, csv_base)
+        object_graph_cols = "\n".join(
+            "<column datatype='{}' name='{}' ordinal='{}' />".format(
+                c["datatype"], c["name"], i
+            )
+            for i, c in enumerate(all_columns)
+        )
+
+        ds_xml = f"""<datasource caption='{ds_caption}' inline='true' name='{ds_name}' version='18.1'>
+  <connection class='federated'>
+    <named-connections>
+      <named-connection caption='{ds_caption}' name='{conn_name}'>
+        <connection class='textscan'
+          directory='{csv_dir}'
+          filename='{csv_filename}'
+          password=''
+          server='' />
+      </named-connection>
+    </named-connections>
+    <relation connection='{conn_name}' name='{csv_filename}' table='{table_ref}' type='table'>
+      <columns character-set='UTF-8' header='yes' locale='en_US' separator=','>
+{col_ordinals}
+      </columns>
+    </relation>
+    <metadata-records>
+{metadata_records}
+    </metadata-records>
+  </connection>
+  <aliases enabled='yes' />
+{column_declarations}
+  <layout dim-ordering='alphabetic' measure-ordering='alphabetic' show-structure='true' />
+  <object-graph>
+    <objects>
+      <object caption='{csv_filename}' id='{obj_id}'>
+        <properties context=''>
+          <relation connection='{conn_name}' name='{csv_filename}' table='{table_ref}' type='table'>
+            <columns character-set='UTF-8' header='yes' locale='en_US' separator=','>
+{object_graph_cols}
+            </columns>
+          </relation>
+        </properties>
+      </object>
+    </objects>
+  </object-graph>
+</datasource>"""
+
+        new_ds = etree.fromstring(ds_xml, self.parser)
+
+        datasources_elem = root.find(".//datasources")
+        # Remove old datasource(s)
+        for old in datasources_elem.findall("datasource"):
+            datasources_elem.remove(old)
+        datasources_elem.append(new_ds)
+
+    # ------------------------------------------------------------------
+    # Worksheet / window builders
+    # ------------------------------------------------------------------
+
+    def _build_worksheet(self, name, ds_id, cols, rows,
+                         col_datatype, col_role, col_type,
+                         row_datatype, row_role, row_type,
+                         mark_type, uuid) -> str:
+
         cols_ref = f"[{ds_id}].[{cols}]" if cols else ""
         rows_ref = f"[{ds_id}].[{rows}]" if rows else ""
-        
-        worksheet_xml = f"""
-        <worksheet name='{name}'>
-          <table>
-            <view>
-              <datasources>
-                <datasource name='{ds_id}' />
-              </datasources>
-              <datasource-dependencies datasource='{ds_id}'>
-                <column datatype='string' name='[{cols}]' role='dimension' type='nominal' />
-                <column datatype='real' name='[{rows}]' role='measure' type='quantitative' />
-              </datasource-dependencies>
-              <aggregation value='true' />
-            </view>
-            <style />
-            <panes>
-              <pane selection-relaxation-option='selection-relaxation-allow'>
-                <view>
-                  <breakdown value='auto' />
-                </view>
-                <mark class='{mark_type}' />
-              </pane>
-            </panes>
-            <rows>{rows_ref}</rows>
-            <cols>{cols_ref}</cols>
-          </table>
-          <simple-id uuid='{uuid}' />
-        </worksheet>
-        """
-        return worksheet_xml
-    
+
+        return f"""<worksheet name='{name}'>
+  <table>
+    <view>
+      <datasources>
+        <datasource name='{ds_id}' />
+      </datasources>
+      <datasource-dependencies datasource='{ds_id}'>
+        <column datatype='{col_datatype}' name='[{cols}]' role='{col_role}' type='{col_type}' />
+        <column datatype='{row_datatype}' name='[{rows}]' role='{row_role}' type='{row_type}' />
+      </datasource-dependencies>
+      <aggregation value='true' />
+    </view>
+    <style />
+    <panes>
+      <pane selection-relaxation-option='selection-relaxation-allow'>
+        <view>
+          <breakdown value='auto' />
+        </view>
+        <mark class='{mark_type}' />
+      </pane>
+    </panes>
+    <rows>{rows_ref}</rows>
+    <cols>{cols_ref}</cols>
+  </table>
+  <simple-id uuid='{uuid}' />
+</worksheet>"""
+
     def _build_window(self, name: str, uuid: str, maximized: bool = False) -> str:
-        """Build window XML block safely."""
-        
         maximized_attr = "maximized='true'" if maximized else ""
-        
-        window_xml = f"""
-        <window class='worksheet' {maximized_attr} name='{name}'>
-          <cards>
-            <edge name='left'>
-              <strip size='160'>
-                <card type='pages' />
-                <card type='filters' />
-                <card type='marks' />
-              </strip>
-            </edge>
-            <edge name='top'>
-              <strip size='2147483647'>
-                <card type='columns' />
-              </strip>
-              <strip size='2147483647'>
-                <card type='rows' />
-              </strip>
-              <strip size='31'>
-                <card type='title' />
-              </strip>
-            </edge>
-          </cards>
-          <simple-id uuid='{uuid}' />
-        </window>
-        """
-        return window_xml
-    
-    def _update_datasource_path(self, root, dataset_path: str):
-        """Update datasource connection to point to new dataset."""
-        connection_elem = root.find(".//connection[@class='textscan']")
-        if connection_elem is not None:
-            connection_elem.set("directory", os.path.dirname(os.path.abspath(dataset_path)))
-            connection_elem.set("filename", os.path.basename(dataset_path))
+        return f"""<window class='worksheet' {maximized_attr} name='{name}'>
+  <cards>
+    <edge name='left'>
+      <strip size='160'>
+        <card type='pages' />
+        <card type='filters' />
+        <card type='marks' />
+      </strip>
+    </edge>
+    <edge name='top'>
+      <strip size='2147483647'>
+        <card type='columns' />
+      </strip>
+      <strip size='2147483647'>
+        <card type='rows' />
+      </strip>
+      <strip size='31'>
+        <card type='title' />
+      </strip>
+    </edge>
+  </cards>
+  <simple-id uuid='{uuid}' />
+</window>"""
+
+    # ------------------------------------------------------------------
+    # Schema helpers
+    # ------------------------------------------------------------------
+
+    def _field_meta(self, field_name: str, schema: Dict):
+        """Return (datatype, role, type) tuple for a field name from schema."""
+        if schema:
+            for d in schema.get("dimensions", []):
+                if d["name"] == field_name:
+                    return "string", "dimension", "nominal"
+            for m in schema.get("measures", []):
+                sample = m.get("sample_values", [None])[0]
+                dt = "integer" if isinstance(sample, int) else "real"
+                return dt, "measure", "quantitative"
+        return "string", "dimension", "nominal"
+
+    def _build_metadata_records(self, columns, csv_base, obj_id) -> str:
+        records = []
+        # capability record
+        records.append(f"""      <metadata-record class='capability'>
+        <remote-name />
+        <remote-type>0</remote-type>
+        <parent-name>[{csv_base}.csv]</parent-name>
+        <remote-alias />
+        <aggregation>Count</aggregation>
+        <contains-null>true</contains-null>
+      </metadata-record>""")
+
+        for i, col in enumerate(columns):
+            is_string = col["datatype"] == "string"
+            remote_type = "129" if is_string else ("20" if col["datatype"] == "integer" else "5")
+            agg = "Count" if is_string else "Sum"
+            local_type = "string" if is_string else col["datatype"]
+            extra = """
+        <scale>1</scale>
+        <width>1073741823</width>
+        <collation flag='0' name='LEN_RGB' />""" if is_string else ""
+            records.append(f"""      <metadata-record class='column'>
+        <remote-name>{col['name']}</remote-name>
+        <remote-type>{remote_type}</remote-type>
+        <local-name>[{col['name']}]</local-name>
+        <parent-name>[{csv_base}.csv]</parent-name>
+        <remote-alias>{col['name']}</remote-alias>
+        <ordinal>{i}</ordinal>
+        <local-type>{local_type}</local-type>
+        <aggregation>{agg}</aggregation>
+        <contains-null>true</contains-null>{extra}
+        <object-id>[{obj_id}]</object-id>
+      </metadata-record>""")
+        return "\n".join(records)
+
+    def _build_column_declarations(self, columns, obj_id, csv_base) -> str:
+        # internal object-id column
+        lines = [f"  <column caption='{csv_base}.csv' datatype='table' "
+                 f"name='[__tableau_internal_object_id__].[{obj_id}]' "
+                 f"role='measure' type='quantitative' />"]
+        for col in columns:
+            is_string = col["datatype"] == "string"
+            role = "dimension" if is_string else "measure"
+            col_type = "nominal" if is_string else "quantitative"
+            caption = col["name"].replace("_", " ").title()
+            col_name = col["name"]
+            lines.append(
+                "<column caption='{}' datatype='{}' name='[{}]' role='{}' type='{}' />".format(
+                    caption, col["datatype"], col_name, role, col_type
+                )
+            )
+        return "\n".join(lines)
+
+    # ------------------------------------------------------------------
+    # ID generators — deterministic so re-running gives same IDs
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _stable_id(prefix: str, seed: str) -> str:
+        h = hashlib.md5(seed.encode()).hexdigest()
+        # Format like Tableau's own IDs  e.g. federated.1n9e10m...
+        return f"{prefix}.{h}"
+
+    @staticmethod
+    def _stable_obj_id(seed: str) -> str:
+        h = hashlib.md5(seed.encode()).hexdigest().upper()
+        # Format like amazon.csv_3C161C9012F4457FB86D06CC11821000
+        name = os.path.splitext(seed)[0]
+        return f"{name}_{h}"

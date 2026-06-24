@@ -71,7 +71,8 @@ def generate_tableau_workbook(
         result = compiler.compile_workbook(
             blueprint=blueprint,
             output_path=output_path,
-            dataset_path=dataset_path
+            dataset_path=dataset_path,
+            schema=schema,
         )
         
         result["blueprint_used"] = blueprint
