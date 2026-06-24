@@ -148,7 +148,8 @@ class TableauXMLCompiler:
         # ── Build column ordinal list from schema ──────────────────────
         all_columns = []
         for d in schema.get("dimensions", []):
-            all_columns.append({"name": d["name"], "datatype": "string"})
+            datatype = self._infer_dimension_datatype(d)
+            all_columns.append({"name": d["name"], "datatype": datatype})
         for m in schema.get("measures", []):
             dt = "integer" if isinstance(m.get("sample_values", [None])[0], int) else "real"
             all_columns.append({"name": m["name"], "datatype": dt})
@@ -290,12 +291,46 @@ class TableauXMLCompiler:
         if schema:
             for d in schema.get("dimensions", []):
                 if d["name"] == field_name:
-                    return "string", "dimension", "nominal"
+                    # Detect date fields by name convention or sample values
+                    datatype = self._infer_dimension_datatype(d)
+                    return datatype, "dimension", "nominal"
             for m in schema.get("measures", []):
-                sample = m.get("sample_values", [None])[0]
-                dt = "integer" if isinstance(sample, int) else "real"
-                return dt, "measure", "quantitative"
+                if m["name"] == field_name:
+                    sample = m.get("sample_values", [None])[0]
+                    dt = "integer" if isinstance(sample, int) else "real"
+                    return dt, "measure", "quantitative"
         return "string", "dimension", "nominal"
+
+    @staticmethod
+    def _infer_dimension_datatype(dim: Dict) -> str:
+        """
+        Infer whether a dimension is a date, datetime, or plain string.
+        Checks field name hints first, then sample values.
+        """
+        name = dim.get("name", "").lower()
+
+        # Name-based heuristics
+        date_keywords = ("date", "time", "year", "month", "day", "week",
+                         "quarter", "timestamp", "created", "updated")
+        if any(kw in name for kw in date_keywords):
+            return "date"
+
+        # Sample-value heuristics
+        import re
+        date_patterns = [
+            r"^\d{4}-\d{2}-\d{2}$",            # 2024-01-15
+            r"^\d{2}/\d{2}/\d{4}$",             # 01/15/2024
+            r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}", # ISO datetime
+            r"^\d{4}$",                          # bare year e.g. 2024
+            r"^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)",  # month names
+            r"^Q[1-4] \d{4}$",                  # Q1 2024
+        ]
+        for val in dim.get("sample_values", []):
+            s = str(val).strip()
+            if any(re.match(p, s, re.IGNORECASE) for p in date_patterns):
+                return "date"
+
+        return "string"
 
     def _build_metadata_records(self, columns, csv_base, obj_id) -> str:
         records = []
@@ -309,11 +344,17 @@ class TableauXMLCompiler:
         <contains-null>true</contains-null>
       </metadata-record>""")
 
+        # remote-type mapping: string=129, real=5, integer=20, date=7
+        REMOTE_TYPE = {"string": "129", "real": "5", "integer": "20", "date": "7"}
+        AGG = {"string": "Count", "real": "Sum", "integer": "Sum", "date": "None"}
+        LOCAL_TYPE = {"string": "string", "real": "real", "integer": "integer", "date": "date"}
+
         for i, col in enumerate(columns):
-            is_string = col["datatype"] == "string"
-            remote_type = "129" if is_string else ("20" if col["datatype"] == "integer" else "5")
-            agg = "Count" if is_string else "Sum"
-            local_type = "string" if is_string else col["datatype"]
+            dt = col["datatype"]
+            remote_type = REMOTE_TYPE.get(dt, "129")
+            agg = AGG.get(dt, "Count")
+            local_type = LOCAL_TYPE.get(dt, "string")
+            is_string = dt in ("string", "date")
             extra = """
         <scale>1</scale>
         <width>1073741823</width>
@@ -338,9 +379,9 @@ class TableauXMLCompiler:
                  f"name='[__tableau_internal_object_id__].[{obj_id}]' "
                  f"role='measure' type='quantitative' />"]
         for col in columns:
-            is_string = col["datatype"] == "string"
-            role = "dimension" if is_string else "measure"
-            col_type = "nominal" if is_string else "quantitative"
+            is_measure = col["datatype"] in ("real", "integer")
+            role = "measure" if is_measure else "dimension"
+            col_type = "quantitative" if is_measure else "nominal"
             caption = col["name"].replace("_", " ").title()
             col_name = col["name"]
             lines.append(

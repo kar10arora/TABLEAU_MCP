@@ -101,3 +101,54 @@ Add chart type selection logic:
 - Consider adding "Combined (Area+Line)" for advanced users
 - Tableau auto-sorts date fields chronologically
 
+## Additional Refinement 
+📈 Expanded Keywords for Line Charts
+Line charts are all about continuity, movement, and direction.
+
+Core Time-Series Keywords
+"chronological", "timeline", "history", "historical"
+
+"trajectory", "path", "progression", "movement"
+
+"time-series", "time series pattern"
+
+Directional & Behavioral Keywords
+"fluctuation", "volatility", "swings", "dip", "spike", "surge"
+
+"growth rate", "momentum", "pace"
+
+"pattern over...", "evolution of..."
+
+Specific Date/Time Rollups
+"by year", "monthly", "quarterly", "daily", "day-by-day", "hourly"
+
+"seasonality", "seasonal patterns"
+
+🗻 Expanded Keywords for Area Charts
+Area charts represent not just the change over time, but the volume or magnitude beneath that change. They are also heavily used for part-to-whole relationships changing over time.
+
+Volumetric Keywords
+"cumulative", "total accumulation", "running total" (though sometimes line, area emphasizes the mass)
+
+"volume over time", "magnitude", "mass"
+
+"area under the curve", "filled"
+
+Part-to-Whole / Compositional Keywords
+"share over time", "proportion over time"
+
+"stack", "stacked trend", "contribution over time"
+
+"breakdown of total" (when combined with a date field)
+
+🛠️ Updated LLM Prompt Selection Logic (Example)
+You can inject this directly into your LLM Prompt Updates section to give the model better guardrails:
+
+Markdown
+- Intent: Visualize continuous data, change, or direction over a temporal axis.
+  Keywords: trend, over time, timeline, trajectory, history, historical, chronological, fluctuation, spike, dip, seasonal, [dimension] by [year/month/quarter/day].
+  -> Target: <mark class='Line' />
+
+- Intent: Visualize total volume, cumulative accumulation, or stacked contributions over time.
+  Keywords: area under curve, cumulative, volume over time, running total, stacked trend, share over time, proportion over time, filled trend.
+  -> Target: <mark class='Area' />

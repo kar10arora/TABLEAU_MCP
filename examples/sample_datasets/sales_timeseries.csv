@@ -1,0 +1,13 @@
+date,region,category,sales,quantity,profit
+2024-01-01,USA,Electronics,1200,2,300
+2024-01-01,UK,Furniture,450,5,120
+2024-02-01,USA,Electronics,1350,3,340
+2024-02-01,UK,Furniture,500,4,130
+2024-03-01,USA,Clothing,800,8,200
+2024-03-01,Canada,Electronics,950,2,240
+2024-04-01,USA,Electronics,1100,2,275
+2024-04-01,UK,Clothing,420,6,100
+2024-05-01,Canada,Furniture,670,3,180
+2024-05-01,USA,Electronics,1450,3,360
+2024-06-01,UK,Electronics,880,2,220
+2024-06-01,USA,Furniture,530,4,140

@@ -53,41 +53,67 @@ class LLMClient:
             return self._call_openrouter(prompt)
     
     def _build_prompt(self, schema: Dict, user_request: str) -> str:
-        """Construct prompt for LLM."""
-        
+        """Construct prompt for LLM with chart type intelligence."""
+
         dimensions_list = [d["name"] for d in schema["dimensions"]]
         measures_list = [m["name"] for m in schema["measures"]]
-        
+
         prompt = f"""You are a Tableau dashboard generator. Given a dataset schema and user request, generate a JSON blueprint for creating Tableau worksheets.
 
 Dataset Schema:
-- Dimensions (categorical fields): {', '.join(dimensions_list)}
+- Dimensions (categorical / date fields): {', '.join(dimensions_list)}
 - Measures (numeric fields): {', '.join(measures_list)}
 
 User Request: {user_request}
 
-Generate a JSON blueprint following this EXACT format (no additional text):
+## Chart Type Selection Rules
+
+Choose mark_type based on these signals in the user request:
+
+**Bar** (default for categorical comparisons):
+- "by category", "compare", "ranking", "top N", "bottom N", "breakdown"
+
+**Line** (continuous data over time, direction, change):
+- Intent: visualize continuous data, change, or direction over a temporal axis.
+- Keywords: trend, over time, timeline, trajectory, history, historical,
+  chronological, fluctuation, spike, dip, seasonal, time-series,
+  "by year", "monthly", "quarterly", "daily", "day-by-day", "hourly",
+  growth rate, momentum, pace, pattern over, evolution of,
+  volatility, swings, progression, movement.
+- Default when column_field is a date/time dimension.
+
+**Area** (volume, cumulative magnitude, stacked contributions over time):
+- Intent: visualize total volume, cumulative accumulation, or stacked contributions.
+- Keywords: area under curve, cumulative, volume over time, running total,
+  stacked trend, share over time, proportion over time,
+  filled, contribution over time, breakdown of total (with date).
+
+**Automatic**: let Tableau decide (use only when intent is unclear).
+
+## Output Format
+
+Return ONLY valid JSON, no explanations:
 {{
   "sheets": [
     {{
-      "name": "Sheet 1",
-      "column_field": "<choose dimension>",
-      "row_field": "<choose measure>",
-      "mark_type": "Bar"
+      "name": "Descriptive Sheet Name",
+      "column_field": "<field from dimensions list>",
+      "row_field": "<field from measures list>",
+      "mark_type": "Bar | Line | Area | Automatic"
     }}
   ]
 }}
 
 Rules:
-1. Use ONLY field names from the schema above
-2. column_field should be a dimension
-3. row_field should be a measure
-4. mark_type can be: Bar, Line, Area, or Automatic
-5. Create 1-3 sheets based on the request
-6. Return ONLY valid JSON, no explanations
+1. Use ONLY field names from the schema above — never invent fields.
+2. column_field must come from the dimensions list.
+3. row_field must come from the measures list.
+4. Create 1-3 sheets based on what the request asks for.
+5. When the request mentions a date/time dimension, prefer Line mark type.
+6. Return ONLY the JSON object — no markdown, no commentary.
 
 Generate the blueprint now:"""
-        
+
         return prompt
     
     def _call_gemini(self, prompt: str) -> Dict:
