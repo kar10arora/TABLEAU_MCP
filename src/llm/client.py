@@ -53,7 +53,7 @@ class LLMClient:
             return self._call_openrouter(prompt)
     
     def _build_prompt(self, schema: Dict, user_request: str) -> str:
-        """Construct prompt for LLM with chart type intelligence."""
+        """Construct prompt for LLM with chart type and sort intelligence."""
 
         dimensions_list = [d["name"] for d in schema["dimensions"]]
         measures_list = [m["name"] for m in schema["measures"]]
@@ -74,21 +74,34 @@ Choose mark_type based on these signals in the user request:
 - "by category", "compare", "ranking", "top N", "bottom N", "breakdown"
 
 **Line** (continuous data over time, direction, change):
-- Intent: visualize continuous data, change, or direction over a temporal axis.
 - Keywords: trend, over time, timeline, trajectory, history, historical,
   chronological, fluctuation, spike, dip, seasonal, time-series,
-  "by year", "monthly", "quarterly", "daily", "day-by-day", "hourly",
-  growth rate, momentum, pace, pattern over, evolution of,
-  volatility, swings, progression, movement.
+  "by year", "monthly", "quarterly", "daily", "hourly",
+  growth rate, momentum, pace, pattern over, evolution of.
 - Default when column_field is a date/time dimension.
 
 **Area** (volume, cumulative magnitude, stacked contributions over time):
-- Intent: visualize total volume, cumulative accumulation, or stacked contributions.
 - Keywords: area under curve, cumulative, volume over time, running total,
   stacked trend, share over time, proportion over time,
-  filled, contribution over time, breakdown of total (with date).
+  filled, contribution over time.
 
 **Automatic**: let Tableau decide (use only when intent is unclear).
+
+## Sort Selection Rules
+
+Include a "sort" block when the user asks for ordering:
+
+**Field sort (sort dimension by a measure value)**:
+- Keywords: "top N", "bottom N", "highest", "lowest", "most", "least",
+  "ranked by", "sorted by", "ordered by", "best", "worst"
+- Use direction: "DESC" for top/highest/most/best, "ASC" for lowest/least/worst/bottom
+
+**Alphabetical sort**:
+- Keywords: "alphabetically", "A to Z", "Z to A", "alphabetical order"
+- Use type: "alphabetical", direction "ASC" or "DESC"
+
+**No sort** (omit the "sort" key entirely):
+- When user does not indicate any ordering preference
 
 ## Output Format
 
@@ -99,18 +112,26 @@ Return ONLY valid JSON, no explanations:
       "name": "Descriptive Sheet Name",
       "column_field": "<field from dimensions list>",
       "row_field": "<field from measures list>",
-      "mark_type": "Bar | Line | Area | Automatic"
+      "mark_type": "Bar | Line | Area | Automatic",
+      "sort": {{
+        "field": "<measure field to sort by>",
+        "direction": "DESC | ASC",
+        "type": "field | alphabetical"
+      }}
     }}
   ]
 }}
+
+Note: Omit the "sort" key entirely when no sorting is requested.
 
 Rules:
 1. Use ONLY field names from the schema above — never invent fields.
 2. column_field must come from the dimensions list.
 3. row_field must come from the measures list.
-4. Create 1-3 sheets based on what the request asks for.
-5. When the request mentions a date/time dimension, prefer Line mark type.
-6. Return ONLY the JSON object — no markdown, no commentary.
+4. sort.field must come from the measures list (for field sort) or dimensions list (for alphabetical).
+5. Create 1-3 sheets based on what the request asks for.
+6. When the request mentions a date/time dimension, prefer Line mark type.
+7. Return ONLY the JSON object — no markdown, no commentary.
 
 Generate the blueprint now:"""
 
