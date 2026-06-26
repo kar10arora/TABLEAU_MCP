@@ -74,61 +74,71 @@ class TestBuildFiltersXml:
         self.ds_id = "federated.abc123"
 
     def test_no_filters_returns_empty(self):
-        xml = self.compiler._build_filters_xml(self.ds_id, [], _SCHEMA)
-        assert xml == ""
+        filters_xml, slices_xml = self.compiler._build_filters_xml_and_slices(self.ds_id, [], _SCHEMA)
+        assert filters_xml == ""
+        assert slices_xml == ""
 
     def test_none_filters_returns_empty(self):
-        xml = self.compiler._build_filters_xml(self.ds_id, None, _SCHEMA)
-        assert xml == ""
+        filters_xml, slices_xml = self.compiler._build_filters_xml_and_slices(self.ds_id, None, _SCHEMA)
+        assert filters_xml == ""
+        assert slices_xml == ""
 
     def test_single_value_filter_contains_member(self):
         filters = [{"field": "region", "operator": "=", "values": ["USA"]}]
-        xml = self.compiler._build_filters_xml(self.ds_id, filters, _SCHEMA)
-        assert "<filter" in xml
-        assert "class='categorical'" in xml
-        assert "column='[region]'" in xml
-        assert "member='USA'" in xml
-        assert "level-members" in xml
+        filters_xml, slices_xml = self.compiler._build_filters_xml_and_slices(self.ds_id, filters, _SCHEMA)
+        assert "<filter" in filters_xml
+        assert "class='categorical'" in filters_xml
+        assert "function='member'" in filters_xml
+        assert "&quot;USA&quot;" in filters_xml
+        assert slices_xml != ""
+        assert "slices" in slices_xml
 
     def test_multi_value_filter_contains_union(self):
         filters = [{"field": "region", "operator": "=", "values": ["USA", "UK", "Canada"]}]
-        xml = self.compiler._build_filters_xml(self.ds_id, filters, _SCHEMA)
-        assert "function='union'" in xml
-        assert "member='USA'" in xml
-        assert "member='UK'" in xml
-        assert "member='Canada'" in xml
+        filters_xml, slices_xml = self.compiler._build_filters_xml_and_slices(self.ds_id, filters, _SCHEMA)
+        assert "function='union'" in filters_xml
+        assert "&quot;USA&quot;" in filters_xml
+        assert "&quot;UK&quot;" in filters_xml
+        assert "&quot;Canada&quot;" in filters_xml
 
     def test_single_value_does_not_use_union(self):
         filters = [{"field": "region", "operator": "=", "values": ["USA"]}]
-        xml = self.compiler._build_filters_xml(self.ds_id, filters, _SCHEMA)
-        assert "function='union'" not in xml
-        assert "function='member'" in xml
+        filters_xml, slices_xml = self.compiler._build_filters_xml_and_slices(self.ds_id, filters, _SCHEMA)
+        assert "function='union'" not in filters_xml
+        assert "function='member'" in filters_xml
 
     def test_multiple_filter_fields(self):
         filters = [
             {"field": "region", "operator": "=", "values": ["USA"]},
             {"field": "category", "operator": "=", "values": ["Electronics"]},
         ]
-        xml = self.compiler._build_filters_xml(self.ds_id, filters, _SCHEMA)
-        assert xml.count("<filter") == 2
-        assert "member='USA'" in xml
-        assert "member='Electronics'" in xml
+        filters_xml, slices_xml = self.compiler._build_filters_xml_and_slices(self.ds_id, filters, _SCHEMA)
+        assert filters_xml.count("<filter") == 2
+        assert "&quot;USA&quot;" in filters_xml
+        assert "&quot;Electronics&quot;" in filters_xml
 
-    def test_filter_includes_column_declaration(self):
+    def test_filter_uses_fully_qualified_column(self):
         filters = [{"field": "region", "operator": "=", "values": ["USA"]}]
-        xml = self.compiler._build_filters_xml(self.ds_id, filters, _SCHEMA)
-        assert "<column" in xml
-        assert "name='[region]'" in xml
+        filters_xml, slices_xml = self.compiler._build_filters_xml_and_slices(self.ds_id, filters, _SCHEMA)
+        assert f"column='[{self.ds_id}].[none:region:nk]'" in filters_xml
+
+    def test_filter_includes_slices(self):
+        filters = [{"field": "region", "operator": "=", "values": ["USA"]}]
+        filters_xml, slices_xml = self.compiler._build_filters_xml_and_slices(self.ds_id, filters, _SCHEMA)
+        assert "<slices>" in slices_xml
+        assert f"[{self.ds_id}].[none:region:nk]" in slices_xml
 
     def test_empty_values_skipped(self):
         filters = [{"field": "region", "operator": "=", "values": []}]
-        xml = self.compiler._build_filters_xml(self.ds_id, filters, _SCHEMA)
-        assert xml == ""
+        filters_xml, slices_xml = self.compiler._build_filters_xml_and_slices(self.ds_id, filters, _SCHEMA)
+        assert filters_xml == ""
+        assert slices_xml == ""
 
     def test_missing_field_skipped(self):
         filters = [{"operator": "=", "values": ["USA"]}]
-        xml = self.compiler._build_filters_xml(self.ds_id, filters, _SCHEMA)
-        assert xml == ""
+        filters_xml, slices_xml = self.compiler._build_filters_xml_and_slices(self.ds_id, filters, _SCHEMA)
+        assert filters_xml == ""
+        assert slices_xml == ""
 
 
 # ---------------------------------------------------------------------------
@@ -161,11 +171,12 @@ class TestFilterInGeneratedWorkbook:
             filters = _get_filters(path, "USA Only")
             assert len(filters) == 1
             assert filters[0].get("class") == "categorical"
-            assert filters[0].get("column") == "[region]"
+            column = filters[0].get("column")
+            assert "[none:region:nk]" in column  # Fully qualified column reference
             # Should use member function (not union) for single value
             gfs = filters[0].findall(".//groupfilter")
             functions = [gf.get("function") for gf in gfs]
-            assert "level-members" in functions
+            assert "member" in functions
             assert "union" not in functions
         finally:
             os.unlink(path)
@@ -186,8 +197,9 @@ class TestFilterInGeneratedWorkbook:
             functions = [gf.get("function") for gf in gfs]
             assert "union" in functions
             members = [gf.get("member") for gf in gfs if gf.get("member")]
-            assert "USA" in members
-            assert "UK" in members
+            # Members are quoted in XML
+            assert '&quot;USA&quot;' in members or '"USA"' in members
+            assert '&quot;UK&quot;' in members or '"UK"' in members
         finally:
             os.unlink(path)
 
@@ -205,8 +217,9 @@ class TestFilterInGeneratedWorkbook:
             filters = _get_filters(path, "Multi Filter")
             assert len(filters) == 2
             columns = {f.get("column") for f in filters}
-            assert "[region]" in columns
-            assert "[category]" in columns
+            # Check that columns contain the field names (fully qualified)
+            assert any("region" in c for c in columns)
+            assert any("category" in c for c in columns)
         finally:
             os.unlink(path)
 

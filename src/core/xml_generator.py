@@ -267,12 +267,15 @@ class TableauXMLCompiler:
                 f"name='{row_ci}' pivot='key' type='{row_type}' />"
             )
 
-        # ── Build filter XML ──────────────────────────────────────────
-        filters_xml = self._build_filters_xml(
+        # ── Add declarations for filtered fields (must be in datasource-dependencies) ──
+        filter_field_decls = self._build_filter_field_declarations(filters_cfg, schema)
+
+        # ── Build filter XML (goes AFTER datasource-dependencies, not inside) ──
+        filters_xml, slices_xml = self._build_filters_xml_and_slices(
             ds_id=ds_id,
             filters=filters_cfg,
             schema=schema,
-        ) if filters_cfg else ""
+        ) if filters_cfg else ("", "")
 
         return f"""<worksheet name='{name}'>
   <table>
@@ -282,8 +285,8 @@ class TableauXMLCompiler:
       </datasources>
       <datasource-dependencies datasource='{ds_id}'>
         <column datatype='{col_datatype}' name='[{cols}]' role='{col_role}' type='{col_type}' />
-        <column datatype='{row_datatype}' name='[{rows}]' role='{row_role}' type='{row_type}' />{col_instances}{filters_xml}
-      </datasource-dependencies>{shelf_sorts_xml}
+        <column datatype='{row_datatype}' name='[{rows}]' role='{row_role}' type='{row_type}' />{col_instances}{filter_field_decls}
+      </datasource-dependencies>{filters_xml}{shelf_sorts_xml}{slices_xml}
       <aggregation value='true' />
     </view>
     <style />
@@ -331,15 +334,10 @@ class TableauXMLCompiler:
     # Filter XML builder (Story 2.3)
     # ------------------------------------------------------------------
 
-    def _build_filters_xml(self, ds_id: str, filters: list, schema) -> str:
+    def _build_filter_field_declarations(self, filters: list, schema) -> str:
         """
-        Build filter XML elements to inject inside <datasource-dependencies>.
-
-        Each filter is a dict:
-            {"field": "region", "operator": "=", "values": ["USA", "UK"]}
-
-        Only categorical (dimension) filters are supported in this MVP.
-        Multiple values → multi-member groupfilter.
+        Build <column> and <column-instance> declarations for filter fields.
+        These must be added to <datasource-dependencies> so that filters can reference them.
 
         Returns XML string (empty if no valid filters).
         """
@@ -347,44 +345,104 @@ class TableauXMLCompiler:
             return ""
 
         lines = []
+        seen_fields = set()
+
+        for f in filters:
+            field = f.get("field", "")
+            if not field or field in seen_fields:
+                continue
+            seen_fields.add(field)
+
+            datatype, role, ftype = self._field_meta(field, schema)
+            ci_name = f"[none:{field}:nk]" if ftype != "quantitative" else f"[sum:{field}:qk]"
+            derivation = "None" if ftype != "quantitative" else "Sum"
+
+            # Add column declaration
+            lines.append(
+                f"\n        <column datatype='{datatype}' name='[{field}]' role='{role}' type='{ftype}' />"
+            )
+            # Add column-instance declaration
+            lines.append(
+                f"\n        <column-instance column='[{field}]' derivation='{derivation}' "
+                f"name='{ci_name}' pivot='key' type='{ftype}' />"
+            )
+
+        return "".join(lines)
+
+    def _build_filters_xml_and_slices(self, ds_id: str, filters: list, schema):
+        """
+        Build filter XML elements and slices for <view> (outside datasource-dependencies).
+
+        Each filter is a dict:
+            {"field": "region", "operator": "=", "values": ["USA", "UK"]}
+
+        Returns (filters_xml, slices_xml) tuple. Both empty if no valid filters.
+
+        Filter structure:
+          <filter class='categorical' column='[ds_id].[none:field:nk]'>
+            <groupfilter function='union' user:ui-domain='database' ...>
+              <groupfilter function='member' level='[none:field:nk]' member='&quot;USA&quot;'/>
+            </groupfilter>
+          </filter>
+          <slices>
+            <column>[ds_id].[none:field:nk]</column>
+          </slices>
+        """
+        if not filters:
+            return "", ""
+
+        filter_lines = []
+        slice_columns = []
+
         for f in filters:
             field = f.get("field", "")
             values = f.get("values", [])
             if not field or not values:
                 continue
 
-            # Determine the field's datatype so we can emit the right column decl
+            # Determine field's type to construct column-instance name
             datatype, role, ftype = self._field_meta(field, schema)
+            ci_name = f"[none:{field}:nk]" if ftype != "quantitative" else f"[sum:{field}:qk]"
+            fq_column = f"[{ds_id}].{ci_name}"
 
-            # Column declaration for the filter field
-            lines.append(
-                f"\n        <column datatype='{datatype}' name='[{field}]' "
-                f"role='{role}' type='{ftype}' />"
-            )
+            # Track for slices element
+            slice_columns.append(fq_column)
 
             if len(values) == 1:
-                # Single-value categorical filter
+                # Single-value: use function='member'
                 member = values[0]
-                lines.append(f"""
-        <filter class='categorical' column='[{field}]'>
-          <groupfilter function='member' level='[{field}]'>
-            <groupfilter function='level-members' level='[{field}]' member='{member}' />
-          </groupfilter>
-        </filter>""")
+                member_quoted = f"&quot;{member}&quot;"
+                filter_lines.append(f"""
+      <filter class='categorical' column='{fq_column}'>
+        <groupfilter function='member' level='{ci_name}' member='{member_quoted}'>
+        </groupfilter>
+      </filter>""")
             else:
-                # Multi-value categorical filter
+                # Multi-value: use function='union'
                 member_elements = "\n".join(
-                    f"            <groupfilter function='level-members' level='[{field}]' member='{v}' />"
+                    f"        <groupfilter function='member' level='{ci_name}' member='&quot;{v}&quot;'/>"
                     for v in values
                 )
-                lines.append(f"""
-        <filter class='categorical' column='[{field}]'>
-          <groupfilter function='union' level='[{field}]'>
+                filter_lines.append(f"""
+      <filter class='categorical' column='{fq_column}'>
+        <groupfilter function='union' user:ui-domain='database' user:ui-enumeration='inclusive' user:ui-marker='enumerate'>
 {member_elements}
-          </groupfilter>
-        </filter>""")
+        </groupfilter>
+      </filter>""")
 
-        return "".join(lines)
+        filters_xml = "".join(filter_lines)
+
+        # Build slices element
+        if slice_columns:
+            slice_items = "\n".join(f"        <column>{col}</column>" for col in slice_columns)
+            slices_xml = f"""
+      <slices>
+{slice_items}
+      </slices>"""
+        else:
+            slices_xml = ""
+
+        return filters_xml, slices_xml
 
     # ------------------------------------------------------------------
     # Sort XML builder (Story 2.2)
