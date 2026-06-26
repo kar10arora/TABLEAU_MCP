@@ -86,6 +86,7 @@ class TableauXMLCompiler:
                 row_field = sheet.get("row_field", "")
                 sort_cfg = sheet.get("sort")          # optional sort block
                 filters_cfg = sheet.get("filters")    # optional filters list
+                encodings_cfg = sheet.get("encodings") # optional encodings (color, size, tooltip)
 
                 # Determine datatypes from schema
                 col_datatype, col_role, col_type = self._field_meta(col_field, schema)
@@ -107,6 +108,7 @@ class TableauXMLCompiler:
                     sort_cfg=sort_cfg,
                     schema=schema,
                     filters_cfg=filters_cfg,
+                    encodings_cfg=encodings_cfg,
                 )
                 win_xml = self._build_window(
                     name=sheet["name"],
@@ -231,7 +233,7 @@ class TableauXMLCompiler:
                          row_datatype, row_role, row_type,
                          mark_type, uuid,
                          sort_cfg=None, schema=None,
-                         filters_cfg=None) -> str:
+                         filters_cfg=None, encodings_cfg=None) -> str:
 
         # ── Column-instance name helpers (needed for shelf refs) ───────
         def _ci_name(field, ftype):
@@ -270,12 +272,22 @@ class TableauXMLCompiler:
         # ── Add declarations for filtered fields (must be in datasource-dependencies) ──
         filter_field_decls = self._build_filter_field_declarations(filters_cfg, schema)
 
+        # ── Add declarations for encoded fields (color, size, tooltip) ──
+        encoding_field_decls = self._build_encoding_field_declarations(encodings_cfg, schema)
+
         # ── Build filter XML (goes AFTER datasource-dependencies, not inside) ──
         filters_xml, slices_xml = self._build_filters_xml_and_slices(
             ds_id=ds_id,
             filters=filters_cfg,
             schema=schema,
         ) if filters_cfg else ("", "")
+
+        # ── Build encoding XML (goes AFTER datasource-dependencies) ──
+        encodings_xml = self._build_encodings_xml(
+            ds_id=ds_id,
+            encodings=encodings_cfg,
+            schema=schema,
+        )
 
         return f"""<worksheet name='{name}'>
   <table>
@@ -285,7 +297,7 @@ class TableauXMLCompiler:
       </datasources>
       <datasource-dependencies datasource='{ds_id}'>
         <column datatype='{col_datatype}' name='[{cols}]' role='{col_role}' type='{col_type}' />
-        <column datatype='{row_datatype}' name='[{rows}]' role='{row_role}' type='{row_type}' />{col_instances}{filter_field_decls}
+        <column datatype='{row_datatype}' name='[{rows}]' role='{row_role}' type='{row_type}' />{col_instances}{filter_field_decls}{encoding_field_decls}
       </datasource-dependencies>{filters_xml}{shelf_sorts_xml}{slices_xml}
       <aggregation value='true' />
     </view>
@@ -295,7 +307,7 @@ class TableauXMLCompiler:
         <view>
           <breakdown value='auto' />
         </view>
-        <mark class='{mark_type}' />
+        <mark class='{mark_type}' />{encodings_xml}
       </pane>
     </panes>
     <rows>{rows_ref}</rows>
@@ -333,6 +345,53 @@ class TableauXMLCompiler:
     # ------------------------------------------------------------------
     # Filter XML builder (Story 2.3)
     # ------------------------------------------------------------------
+
+    def _build_encoding_field_declarations(self, encodings: dict, schema) -> str:
+        """
+        Build <column> and <column-instance> declarations for encoding fields.
+        These must be added to <datasource-dependencies> so that encodings can reference them.
+
+        Returns XML string (empty if no valid encodings).
+        """
+        if not encodings:
+            return ""
+
+        lines = []
+        seen_fields = set()
+
+        # Extract all fields from encodings (color, size, tooltip)
+        fields_to_declare = set()
+        if encodings.get("color") and encodings["color"].get("field"):
+            fields_to_declare.add(encodings["color"]["field"])
+        if encodings.get("size") and encodings["size"].get("field"):
+            fields_to_declare.add(encodings["size"]["field"])
+        if encodings.get("tooltip"):
+            tooltip_fields = encodings["tooltip"]
+            if isinstance(tooltip_fields, list):
+                fields_to_declare.update(tooltip_fields)
+            elif isinstance(tooltip_fields, str):
+                fields_to_declare.add(tooltip_fields)
+
+        for field in fields_to_declare:
+            if not field or field in seen_fields:
+                continue
+            seen_fields.add(field)
+
+            datatype, role, ftype = self._field_meta(field, schema)
+            ci_name = f"[none:{field}:nk]" if ftype != "quantitative" else f"[sum:{field}:qk]"
+            derivation = "None" if ftype != "quantitative" else "Sum"
+
+            # Add column declaration
+            lines.append(
+                f"\n        <column datatype='{datatype}' name='[{field}]' role='{role}' type='{ftype}' />"
+            )
+            # Add column-instance declaration
+            lines.append(
+                f"\n        <column-instance column='[{field}]' derivation='{derivation}' "
+                f"name='{ci_name}' pivot='key' type='{ftype}' />"
+            )
+
+        return "".join(lines)
 
     def _build_filter_field_declarations(self, filters: list, schema) -> str:
         """
@@ -443,6 +502,70 @@ class TableauXMLCompiler:
             slices_xml = ""
 
         return filters_xml, slices_xml
+
+    def _build_encodings_xml(self, ds_id: str, encodings: dict, schema) -> str:
+        """
+        Build <encodings> element with <color>, <size>, <text> children (Story 2.4).
+
+        Encodings go inside <pane>, after <mark> element.
+
+        Each encoding is a child element:
+          <encodings>
+            <color column='[ds_id].[none:field:nk]' />
+            <size column='[ds_id].[sum:field:qk]' />
+            <text column='[ds_id].[none:field:nk]' />
+          </encodings>
+
+        Returns XML string with wrapper (empty if no valid encodings).
+        """
+        if not encodings:
+            return ""
+
+        lines = []
+
+        # Color encoding
+        if encodings.get("color"):
+            color_cfg = encodings["color"]
+            field = color_cfg.get("field", "")
+
+            if field:
+                datatype, role, ftype = self._field_meta(field, schema)
+                ci_name = f"[none:{field}:nk]" if ftype != "quantitative" else f"[sum:{field}:qk]"
+                fq_column = f"[{ds_id}].{ci_name}"
+
+                lines.append(f"\n        <color column='{fq_column}' />")
+
+        # Size encoding
+        if encodings.get("size"):
+            size_cfg = encodings["size"]
+            field = size_cfg.get("field", "")
+
+            if field:
+                datatype, role, ftype = self._field_meta(field, schema)
+                ci_name = f"[none:{field}:nk]" if ftype != "quantitative" else f"[sum:{field}:qk]"
+                fq_column = f"[{ds_id}].{ci_name}"
+
+                lines.append(f"\n        <size column='{fq_column}' />")
+
+        # Tooltip encoding (stored as 'text' in Tableau XML)
+        if encodings.get("tooltip"):
+            tooltip_fields = encodings["tooltip"]
+            if not isinstance(tooltip_fields, list):
+                tooltip_fields = [tooltip_fields]
+
+            for field in tooltip_fields:
+                if field:
+                    datatype, role, ftype = self._field_meta(field, schema)
+                    ci_name = f"[none:{field}:nk]" if ftype != "quantitative" else f"[sum:{field}:qk]"
+                    fq_column = f"[{ds_id}].{ci_name}"
+
+                    lines.append(f"\n        <text column='{fq_column}' />")
+
+        if not lines:
+            return ""
+
+        # Wrap in <encodings> element
+        return f"\n      <encodings>{''.join(lines)}\n      </encodings>"
 
     # ------------------------------------------------------------------
     # Sort XML builder (Story 2.2)

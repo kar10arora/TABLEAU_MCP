@@ -116,6 +116,29 @@ Include a "filters" array when the user wants to restrict data to specific value
 **No filter** (omit "filters" entirely):
 - When user does not mention specific values to include/exclude
 
+## Visual Encodings (Story 2.4)
+
+Include an "encodings" object to add color, size, and tooltip visual properties:
+
+**Color Encoding**:
+- Keywords: "color by", "colored by", "color-code", "color-coded"
+- Example: "sales by category, color by region" → encodings.color = {{"field": "region", "type": "dimension"}}
+- Use "type": "dimension" for categorical colors, "type": "measure" for gradient colors
+- Optional "palette": "tableau10" (default), "tableau20", or other Tableau palettes
+
+**Size Encoding**:
+- Keywords: "size by", "sized by", "bubble", "bubble chart", "size-encoded"
+- Example: "bubble chart with size by quantity" → encodings.size = {{"field": "quantity"}}
+- Typically used with Circle or Point mark types
+
+**Tooltip Encoding**:
+- Keywords: "show", "display", "tooltip", "hover", "on hover"
+- Example: "show sales and quantity in tooltip" → encodings.tooltip = ["sales", "quantity"]
+- Can be a single field or array of fields to include in hover display
+
+**No encoding** (omit "encodings" entirely):
+- When user does not request color, size, or tooltip modifications
+
 ## Output Format
 
 Return ONLY valid JSON, no explanations:
@@ -125,7 +148,7 @@ Return ONLY valid JSON, no explanations:
       "name": "Descriptive Sheet Name",
       "column_field": "<field from dimensions list>",
       "row_field": "<field from measures list>",
-      "mark_type": "Bar | Line | Area | Automatic",
+      "mark_type": "Bar | Line | Area | Circle | Automatic",
       "sort": {{
         "field": "<measure field to sort by>",
         "direction": "DESC | ASC",
@@ -137,13 +160,25 @@ Return ONLY valid JSON, no explanations:
           "operator": "=",
           "values": ["<value1>", "<value2>"]
         }}
-      ]
+      ],
+      "encodings": {{
+        "color": {{
+          "field": "<dimension or measure field>",
+          "type": "dimension | measure",
+          "palette": "tableau10 | tableau20"
+        }},
+        "size": {{
+          "field": "<measure field>"
+        }},
+        "tooltip": ["<field1>", "<field2>"]
+      }}
     }}
   ]
 }}
 
 Note: Omit the "sort" key entirely when no sorting is requested.
 Note: Omit the "filters" key entirely when no filtering is requested.
+Note: Omit the "encodings" key entirely when no color/size/tooltip is requested.
 
 Rules:
 1. Use ONLY field names from the schema above — never invent fields.
@@ -152,9 +187,13 @@ Rules:
 4. sort.field must come from the measures list (for field sort) or dimensions list (for alphabetical).
 5. filters[].field must come from the dimensions list.
 6. filters[].values must contain actual data values matching the field (use realistic values from sample_values if known).
-7. Create 1-3 sheets based on what the request asks for.
-8. When the request mentions a date/time dimension, prefer Line mark type.
-9. Return ONLY the JSON object — no markdown, no commentary.
+7. encodings.color.field can be from dimensions (categorical) or measures (gradient).
+8. encodings.size.field should be a measure (numeric field).
+9. encodings.tooltip fields can be from either dimensions or measures list.
+10. Create 1-3 sheets based on what the request asks for.
+11. When the request mentions a date/time dimension, prefer Line mark type.
+12. Circle/Point mark types work best with size encoding (bubble charts).
+13. Return ONLY the JSON object — no markdown, no commentary.
 
 Generate the blueprint now:"""
 
