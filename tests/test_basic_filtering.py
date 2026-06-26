@@ -1,13 +1,12 @@
 """
 Tests for Story 2.3: Basic Filtering
 
-Covers:
-- _build_filters_xml() for single-value and multi-value filters
-- Filter XML correctly injected into <datasource-dependencies>
-- Filter + sort combination works
-- Filter + chart type combination works
-- LLM prompt contains filter keywords
-- No filter when not requested
+Correct pattern (from working TWB):
+  - <filter> is OUTSIDE <datasource-dependencies>, inside <view>
+  - column attr uses fully-qualified CI name: [ds_id].[none:field:nk]
+  - member values are quoted: member='&quot;USA&quot;'
+  - <slices> element follows each filter
+  - _build_filters_xml returns a tuple (col_decls_str, filter_view_str)
 """
 
 import os
@@ -52,19 +51,8 @@ def _get_filters(twb_path, sheet_name):
     return []
 
 
-def _get_groupfilters(twb_path, sheet_name):
-    """Return all <groupfilter> children under all filters for a sheet."""
-    tree = etree.parse(twb_path)
-    result = []
-    for ws in tree.findall(".//worksheet"):
-        if ws.get("name") == sheet_name:
-            for f in ws.findall(".//filter"):
-                result.extend(f.findall(".//groupfilter"))
-    return result
-
-
 # ---------------------------------------------------------------------------
-# 1. Unit: _build_filters_xml helper
+# 1. Unit: _build_filters_xml helper — returns (col_decls, filter_view_xml)
 # ---------------------------------------------------------------------------
 
 class TestBuildFiltersXml:
@@ -73,62 +61,105 @@ class TestBuildFiltersXml:
         self.compiler = TableauXMLCompiler(TEMPLATE)
         self.ds_id = "federated.abc123"
 
+    def _xml(self, filters):
+        """Helper: join both parts of the tuple for simple string checks."""
+        col_decls, filter_view = self.compiler._build_filters_xml(
+            self.ds_id, filters, _SCHEMA
+        )
+        return col_decls + filter_view
+
     def test_no_filters_returns_empty(self):
-        xml = self.compiler._build_filters_xml(self.ds_id, [], _SCHEMA)
-        assert xml == ""
+        col_decls, filter_view = self.compiler._build_filters_xml(
+            self.ds_id, [], _SCHEMA
+        )
+        assert col_decls == ""
+        assert filter_view == ""
 
     def test_none_filters_returns_empty(self):
-        xml = self.compiler._build_filters_xml(self.ds_id, None, _SCHEMA)
-        assert xml == ""
+        col_decls, filter_view = self.compiler._build_filters_xml(
+            self.ds_id, None, _SCHEMA
+        )
+        assert col_decls == ""
+        assert filter_view == ""
 
-    def test_single_value_filter_contains_member(self):
+    def test_single_value_filter_view_contains_filter(self):
         filters = [{"field": "region", "operator": "=", "values": ["USA"]}]
-        xml = self.compiler._build_filters_xml(self.ds_id, filters, _SCHEMA)
-        assert "<filter" in xml
-        assert "class='categorical'" in xml
-        assert "column='[region]'" in xml
-        assert "member='USA'" in xml
-        assert "level-members" in xml
+        _, filter_view = self.compiler._build_filters_xml(
+            self.ds_id, filters, _SCHEMA
+        )
+        assert "<filter" in filter_view
+        assert "class='categorical'" in filter_view
+        # column attr uses fully-qualified CI name
+        assert f"[{self.ds_id}].[none:region:nk]" in filter_view
+        # member value is quoted
+        assert "&quot;USA&quot;" in filter_view
+
+    def test_single_value_uses_member_not_union(self):
+        filters = [{"field": "region", "operator": "=", "values": ["USA"]}]
+        _, filter_view = self.compiler._build_filters_xml(
+            self.ds_id, filters, _SCHEMA
+        )
+        assert "function='union'" not in filter_view
+        assert "function='member'" in filter_view
 
     def test_multi_value_filter_contains_union(self):
-        filters = [{"field": "region", "operator": "=", "values": ["USA", "UK", "Canada"]}]
-        xml = self.compiler._build_filters_xml(self.ds_id, filters, _SCHEMA)
-        assert "function='union'" in xml
-        assert "member='USA'" in xml
-        assert "member='UK'" in xml
-        assert "member='Canada'" in xml
-
-    def test_single_value_does_not_use_union(self):
-        filters = [{"field": "region", "operator": "=", "values": ["USA"]}]
-        xml = self.compiler._build_filters_xml(self.ds_id, filters, _SCHEMA)
-        assert "function='union'" not in xml
-        assert "function='member'" in xml
+        filters = [{"field": "region", "operator": "=",
+                    "values": ["USA", "UK", "Canada"]}]
+        _, filter_view = self.compiler._build_filters_xml(
+            self.ds_id, filters, _SCHEMA
+        )
+        assert "function='union'" in filter_view
+        assert "&quot;USA&quot;" in filter_view
+        assert "&quot;UK&quot;" in filter_view
+        assert "&quot;Canada&quot;" in filter_view
 
     def test_multiple_filter_fields(self):
         filters = [
             {"field": "region", "operator": "=", "values": ["USA"]},
             {"field": "category", "operator": "=", "values": ["Electronics"]},
         ]
-        xml = self.compiler._build_filters_xml(self.ds_id, filters, _SCHEMA)
-        assert xml.count("<filter") == 2
-        assert "member='USA'" in xml
-        assert "member='Electronics'" in xml
+        _, filter_view = self.compiler._build_filters_xml(
+            self.ds_id, filters, _SCHEMA
+        )
+        assert filter_view.count("<filter") == 2
+        assert "&quot;USA&quot;" in filter_view
+        assert "&quot;Electronics&quot;" in filter_view
 
-    def test_filter_includes_column_declaration(self):
+    def test_col_decls_contain_column_and_ci(self):
+        """col_decls must include both <column> and <column-instance> for the filter field."""
         filters = [{"field": "region", "operator": "=", "values": ["USA"]}]
-        xml = self.compiler._build_filters_xml(self.ds_id, filters, _SCHEMA)
-        assert "<column" in xml
-        assert "name='[region]'" in xml
+        col_decls, _ = self.compiler._build_filters_xml(
+            self.ds_id, filters, _SCHEMA
+        )
+        assert "<column" in col_decls
+        assert "name='[region]'" in col_decls
+        assert "<column-instance" in col_decls
+        assert "[none:region:nk]" in col_decls
+
+    def test_slices_element_present(self):
+        """Each filter must be followed by a <slices> element."""
+        filters = [{"field": "region", "operator": "=", "values": ["USA"]}]
+        _, filter_view = self.compiler._build_filters_xml(
+            self.ds_id, filters, _SCHEMA
+        )
+        assert "<slices>" in filter_view
+        assert f"[{self.ds_id}].[none:region:nk]" in filter_view
 
     def test_empty_values_skipped(self):
         filters = [{"field": "region", "operator": "=", "values": []}]
-        xml = self.compiler._build_filters_xml(self.ds_id, filters, _SCHEMA)
-        assert xml == ""
+        col_decls, filter_view = self.compiler._build_filters_xml(
+            self.ds_id, filters, _SCHEMA
+        )
+        assert col_decls == ""
+        assert filter_view == ""
 
     def test_missing_field_skipped(self):
         filters = [{"operator": "=", "values": ["USA"]}]
-        xml = self.compiler._build_filters_xml(self.ds_id, filters, _SCHEMA)
-        assert xml == ""
+        col_decls, filter_view = self.compiler._build_filters_xml(
+            self.ds_id, filters, _SCHEMA
+        )
+        assert col_decls == ""
+        assert filter_view == ""
 
 
 # ---------------------------------------------------------------------------
@@ -161,11 +192,12 @@ class TestFilterInGeneratedWorkbook:
             filters = _get_filters(path, "USA Only")
             assert len(filters) == 1
             assert filters[0].get("class") == "categorical"
-            assert filters[0].get("column") == "[region]"
-            # Should use member function (not union) for single value
+            # column attr uses fully-qualified CI name
+            assert "none:region:nk" in filters[0].get("column", "")
+            # single value → member function, no union
             gfs = filters[0].findall(".//groupfilter")
             functions = [gf.get("function") for gf in gfs]
-            assert "level-members" in functions
+            assert "member" in functions
             assert "union" not in functions
         finally:
             os.unlink(path)
@@ -181,13 +213,14 @@ class TestFilterInGeneratedWorkbook:
             assert result["success"] is True
             filters = _get_filters(path, "USA and UK")
             assert len(filters) == 1
-            # Multi-value should use union
             gfs = filters[0].findall(".//groupfilter")
             functions = [gf.get("function") for gf in gfs]
             assert "union" in functions
+            # member values are XML-entity encoded (&quot;USA&quot;)
+            # lxml parses them back to "USA" in the member attribute
             members = [gf.get("member") for gf in gfs if gf.get("member")]
-            assert "USA" in members
-            assert "UK" in members
+            assert any("USA" in m for m in members)
+            assert any("UK" in m for m in members)
         finally:
             os.unlink(path)
 
@@ -196,17 +229,63 @@ class TestFilterInGeneratedWorkbook:
                                   "column_field": "product", "row_field": "sales",
                                   "mark_type": "Bar",
                                   "filters": [
-                                      {"field": "region", "operator": "=", "values": ["USA"]},
-                                      {"field": "category", "operator": "=", "values": ["Electronics"]},
+                                      {"field": "region", "operator": "=",
+                                       "values": ["USA"]},
+                                      {"field": "category", "operator": "=",
+                                       "values": ["Electronics"]},
                                   ]}]}
         result, path = _compile(blueprint)
         try:
             assert result["success"] is True
             filters = _get_filters(path, "Multi Filter")
             assert len(filters) == 2
+            # Each filter column should contain the CI name of its field
             columns = {f.get("column") for f in filters}
-            assert "[region]" in columns
-            assert "[category]" in columns
+            assert any("none:region:nk" in c for c in columns)
+            assert any("none:category:nk" in c for c in columns)
+        finally:
+            os.unlink(path)
+
+    def test_filter_is_outside_datasource_dependencies(self):
+        """Filter must be a sibling of datasource-dependencies, NOT a child."""
+        blueprint = {"sheets": [{"name": "Outside Deps",
+                                  "column_field": "category", "row_field": "sales",
+                                  "mark_type": "Bar",
+                                  "filters": [{"field": "region", "operator": "=",
+                                               "values": ["USA"]}]}]}
+        result, path = _compile(blueprint)
+        try:
+            assert result["success"] is True
+            tree = etree.parse(path)
+            for ws in tree.findall(".//worksheet"):
+                if ws.get("name") == "Outside Deps":
+                    deps = ws.find(".//datasource-dependencies")
+                    # filter must NOT be inside datasource-dependencies
+                    assert deps.find(".//filter") is None, \
+                        "<filter> must not be inside <datasource-dependencies>"
+                    # filter must be a direct child of <view>
+                    view = ws.find(".//view")
+                    assert view.find("filter") is not None, \
+                        "<filter> must be a direct child of <view>"
+        finally:
+            os.unlink(path)
+
+    def test_slices_element_present_in_xml(self):
+        """<slices> must follow each filter in the generated XML."""
+        blueprint = {"sheets": [{"name": "Slices Check",
+                                  "column_field": "category", "row_field": "sales",
+                                  "mark_type": "Bar",
+                                  "filters": [{"field": "region", "operator": "=",
+                                               "values": ["USA"]}]}]}
+        result, path = _compile(blueprint)
+        try:
+            assert result["success"] is True
+            tree = etree.parse(path)
+            for ws in tree.findall(".//worksheet"):
+                if ws.get("name") == "Slices Check":
+                    view = ws.find(".//view")
+                    assert view.find("slices") is not None, \
+                        "<slices> element must be present"
         finally:
             os.unlink(path)
 
@@ -232,7 +311,6 @@ class TestFilterInGeneratedWorkbook:
             os.unlink(path)
 
     def test_filter_with_line_chart(self):
-        """Filter works on non-Bar chart types too."""
         blueprint = {"sheets": [{"name": "USA Trend",
                                   "column_field": "date", "row_field": "sales",
                                   "mark_type": "Line",
@@ -247,7 +325,6 @@ class TestFilterInGeneratedWorkbook:
             os.unlink(path)
 
     def test_filter_does_not_break_unfiltered_sheets(self):
-        """Multi-sheet: filtered + unfiltered coexist."""
         blueprint = {
             "sheets": [
                 {"name": "Filtered", "column_field": "category", "row_field": "sales",
@@ -316,7 +393,6 @@ def test_llm_generates_filter_for_specific_value():
     assert len(sheets) > 0
 
     filters = sheets[0].get("filters")
-    # LLM should generate a filter for region=USA
     assert filters is not None, "Expected filters for 'USA only' request"
     assert len(filters) > 0
     filter_fields = [f.get("field") for f in filters]

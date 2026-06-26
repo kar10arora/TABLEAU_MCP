@@ -13,12 +13,12 @@
 **So that** I can focus on relevant subsets of data
 
 ## Acceptance Criteria
-- [ ] Dimension filtering works (e.g., "only show USA")
-- [ ] Multiple filter values supported (e.g., "USA, Canada, UK")
+- [x] Dimension filtering works (e.g., "only show USA")
+- [x] Multiple filter values supported (e.g., "USA, Canada, UK")
 - [ ] LLM extracts filter criteria from requests
-- [ ] Filter XML correctly injected into workbooks
+- [x] Filter XML correctly injected into workbooks
 - [ ] Filtered views render correctly in Tableau
-- [ ] Filter UI visible in generated workbook
+- [x] Filter UI visible in generated workbook
 
 ## Technical Details
 
@@ -83,8 +83,8 @@
 - Multi-value filter syntax
 
 ## Definition of Done
-- [ ] Dimension filtering works
-- [ ] Multi-value filters supported
+- [x] Dimension filtering works
+- [x] Multi-value filters supported
 - [ ] LLM extracts filters correctly
 - [ ] Tests passing >80% coverage
 - [ ] Visual validation successful
