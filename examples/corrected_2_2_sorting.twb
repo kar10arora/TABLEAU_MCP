@@ -1,0 +1,362 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<workbook xmlns:user="http://www.tableausoftware.com/xml/user" original-version="18.1" source-build="2026.1.2 (20261.26.0512.1636)" source-platform="mac" version="18.1">
+  <document-format-change-manifest>
+    <AnimationOnByDefault/>
+    <MarkAnimation/>
+    <ObjectModelEncapsulateLegacy/>
+    <ObjectModelTableType/>
+    <SchemaViewerObjectModel/>
+    <SheetIdentifierTracking/>
+    <WindowsPersistSimpleIdentifiers/>
+  </document-format-change-manifest>
+  <preferences>
+    <preference name="ui.encoding.shelf.height" value="24"/>
+    <preference name="ui.shelf.height" value="26"/>
+  </preferences>
+  <datasources>
+    <datasource caption="sales_sample" inline="true" name="federated.4c370429117d77bfea985a15eb369dfd" version="18.1">
+      <connection class="federated">
+        <named-connections>
+          <named-connection caption="sales_sample" name="textscan.4c370429117d77bfea985a15eb369dfd">
+            <connection class="textscan" directory="/Users/kartik.arora/TABLEAU-MCP/examples/sample_datasets" filename="sales_sample.csv" password="" server=""/>
+          </named-connection>
+        </named-connections>
+        <relation connection="textscan.4c370429117d77bfea985a15eb369dfd" name="sales_sample.csv" table="[sales_sample#csv]" type="table">
+          <columns character-set="UTF-8" header="yes" locale="en_US" separator=",">
+            <column datatype="date" name="date" ordinal="0"/>
+            <column datatype="string" name="region" ordinal="1"/>
+            <column datatype="string" name="category" ordinal="2"/>
+            <column datatype="string" name="product" ordinal="3"/>
+            <column datatype="integer" name="sales" ordinal="4"/>
+            <column datatype="integer" name="quantity" ordinal="5"/>
+            <column datatype="integer" name="profit" ordinal="6"/>
+          </columns>
+        </relation>
+        <metadata-records>
+          <metadata-record class="capability">
+            <remote-name/>
+            <remote-type>0</remote-type>
+            <parent-name>[sales_sample.csv]</parent-name>
+            <remote-alias/>
+            <aggregation>Count</aggregation>
+            <contains-null>true</contains-null>
+          </metadata-record>
+          <metadata-record class="column">
+            <remote-name>date</remote-name>
+            <remote-type>7</remote-type>
+            <local-name>[date]</local-name>
+            <parent-name>[sales_sample.csv]</parent-name>
+            <remote-alias>date</remote-alias>
+            <ordinal>0</ordinal>
+            <local-type>date</local-type>
+            <aggregation>None</aggregation>
+            <contains-null>true</contains-null>
+            <scale>1</scale>
+            <width>1073741823</width>
+            <collation flag="0" name="LEN_RGB"/>
+            <object-id>[sales_sample_4C370429117D77BFEA985A15EB369DFD]</object-id>
+          </metadata-record>
+          <metadata-record class="column">
+            <remote-name>region</remote-name>
+            <remote-type>129</remote-type>
+            <local-name>[region]</local-name>
+            <parent-name>[sales_sample.csv]</parent-name>
+            <remote-alias>region</remote-alias>
+            <ordinal>1</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <contains-null>true</contains-null>
+            <scale>1</scale>
+            <width>1073741823</width>
+            <collation flag="0" name="LEN_RGB"/>
+            <object-id>[sales_sample_4C370429117D77BFEA985A15EB369DFD]</object-id>
+          </metadata-record>
+          <metadata-record class="column">
+            <remote-name>category</remote-name>
+            <remote-type>129</remote-type>
+            <local-name>[category]</local-name>
+            <parent-name>[sales_sample.csv]</parent-name>
+            <remote-alias>category</remote-alias>
+            <ordinal>2</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <contains-null>true</contains-null>
+            <scale>1</scale>
+            <width>1073741823</width>
+            <collation flag="0" name="LEN_RGB"/>
+            <object-id>[sales_sample_4C370429117D77BFEA985A15EB369DFD]</object-id>
+          </metadata-record>
+          <metadata-record class="column">
+            <remote-name>product</remote-name>
+            <remote-type>129</remote-type>
+            <local-name>[product]</local-name>
+            <parent-name>[sales_sample.csv]</parent-name>
+            <remote-alias>product</remote-alias>
+            <ordinal>3</ordinal>
+            <local-type>string</local-type>
+            <aggregation>Count</aggregation>
+            <contains-null>true</contains-null>
+            <scale>1</scale>
+            <width>1073741823</width>
+            <collation flag="0" name="LEN_RGB"/>
+            <object-id>[sales_sample_4C370429117D77BFEA985A15EB369DFD]</object-id>
+          </metadata-record>
+          <metadata-record class="column">
+            <remote-name>sales</remote-name>
+            <remote-type>20</remote-type>
+            <local-name>[sales]</local-name>
+            <parent-name>[sales_sample.csv]</parent-name>
+            <remote-alias>sales</remote-alias>
+            <ordinal>4</ordinal>
+            <local-type>integer</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <object-id>[sales_sample_4C370429117D77BFEA985A15EB369DFD]</object-id>
+          </metadata-record>
+          <metadata-record class="column">
+            <remote-name>quantity</remote-name>
+            <remote-type>20</remote-type>
+            <local-name>[quantity]</local-name>
+            <parent-name>[sales_sample.csv]</parent-name>
+            <remote-alias>quantity</remote-alias>
+            <ordinal>5</ordinal>
+            <local-type>integer</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <object-id>[sales_sample_4C370429117D77BFEA985A15EB369DFD]</object-id>
+          </metadata-record>
+          <metadata-record class="column">
+            <remote-name>profit</remote-name>
+            <remote-type>20</remote-type>
+            <local-name>[profit]</local-name>
+            <parent-name>[sales_sample.csv]</parent-name>
+            <remote-alias>profit</remote-alias>
+            <ordinal>6</ordinal>
+            <local-type>integer</local-type>
+            <aggregation>Sum</aggregation>
+            <contains-null>true</contains-null>
+            <object-id>[sales_sample_4C370429117D77BFEA985A15EB369DFD]</object-id>
+          </metadata-record>
+        </metadata-records>
+      </connection>
+      <aliases enabled="yes"/>
+      <column caption="sales_sample.csv" datatype="table" name="[__tableau_internal_object_id__].[sales_sample_4C370429117D77BFEA985A15EB369DFD]" role="measure" type="quantitative"/>
+      <column caption="Date" datatype="date" name="[date]" role="dimension" type="nominal"/>
+      <column caption="Region" datatype="string" name="[region]" role="dimension" type="nominal"/>
+      <column caption="Category" datatype="string" name="[category]" role="dimension" type="nominal"/>
+      <column caption="Product" datatype="string" name="[product]" role="dimension" type="nominal"/>
+      <column caption="Sales" datatype="integer" name="[sales]" role="measure" type="quantitative"/>
+      <column caption="Quantity" datatype="integer" name="[quantity]" role="measure" type="quantitative"/>
+      <column caption="Profit" datatype="integer" name="[profit]" role="measure" type="quantitative"/>
+      <layout dim-ordering="alphabetic" measure-ordering="alphabetic" show-structure="true"/>
+      <object-graph>
+        <objects>
+          <object caption="sales_sample.csv" id="sales_sample_4C370429117D77BFEA985A15EB369DFD">
+            <properties context="">
+              <relation connection="textscan.4c370429117d77bfea985a15eb369dfd" name="sales_sample.csv" table="[sales_sample#csv]" type="table">
+                <columns character-set="UTF-8" header="yes" locale="en_US" separator=",">
+                  <column datatype="date" name="date" ordinal="0"/>
+                  <column datatype="string" name="region" ordinal="1"/>
+                  <column datatype="string" name="category" ordinal="2"/>
+                  <column datatype="string" name="product" ordinal="3"/>
+                  <column datatype="integer" name="sales" ordinal="4"/>
+                  <column datatype="integer" name="quantity" ordinal="5"/>
+                  <column datatype="integer" name="profit" ordinal="6"/>
+                </columns>
+              </relation>
+            </properties>
+          </object>
+        </objects>
+      </object-graph>
+    </datasource>
+  </datasources>
+  <worksheets>
+    <worksheet name="Top Products by Sales (DESC)">
+      <table>
+        <view>
+          <datasources>
+            <datasource name="federated.4c370429117d77bfea985a15eb369dfd"/>
+          </datasources>
+          <datasource-dependencies datasource="federated.4c370429117d77bfea985a15eb369dfd">
+            <column datatype="string" name="[product]" role="dimension" type="nominal"/>
+            <column datatype="integer" name="[sales]" role="measure" type="quantitative"/>
+            <column-instance column="[product]" derivation="None" name="[none:product:nk]" pivot="key" type="nominal"/>
+            <column-instance column="[sales]" derivation="Sum" name="[sum:sales:qk]" pivot="key" type="quantitative"/>
+          </datasource-dependencies>
+          <sort class="computed" direction="DESC" name="[none:product:nk]" user-set="true" value="[sum:sales:qk]"/>
+          <aggregation value="true"/>
+        </view>
+        <style/>
+        <panes>
+          <pane selection-relaxation-option="selection-relaxation-allow">
+            <view>
+              <breakdown value="auto"/>
+            </view>
+            <mark class="Bar"/>
+          </pane>
+        </panes>
+        <rows>[federated.4c370429117d77bfea985a15eb369dfd].[sales]</rows>
+        <cols>[federated.4c370429117d77bfea985a15eb369dfd].[product]</cols>
+      </table>
+      <simple-id uuid="{9C28068B-A7C9-4DB0-A386-152053857544}"/>
+    </worksheet>
+    <worksheet name="Lowest Profit by Region (ASC)">
+      <table>
+        <view>
+          <datasources>
+            <datasource name="federated.4c370429117d77bfea985a15eb369dfd"/>
+          </datasources>
+          <datasource-dependencies datasource="federated.4c370429117d77bfea985a15eb369dfd">
+            <column datatype="string" name="[region]" role="dimension" type="nominal"/>
+            <column datatype="integer" name="[profit]" role="measure" type="quantitative"/>
+            <column-instance column="[region]" derivation="None" name="[none:region:nk]" pivot="key" type="nominal"/>
+            <column-instance column="[profit]" derivation="Sum" name="[sum:profit:qk]" pivot="key" type="quantitative"/>
+          </datasource-dependencies>
+          <sort class="computed" direction="ASC" name="[none:region:nk]" user-set="true" value="[sum:profit:qk]"/>
+          <aggregation value="true"/>
+        </view>
+        <style/>
+        <panes>
+          <pane selection-relaxation-option="selection-relaxation-allow">
+            <view>
+              <breakdown value="auto"/>
+            </view>
+            <mark class="Bar"/>
+          </pane>
+        </panes>
+        <rows>[federated.4c370429117d77bfea985a15eb369dfd].[profit]</rows>
+        <cols>[federated.4c370429117d77bfea985a15eb369dfd].[region]</cols>
+      </table>
+      <simple-id uuid="{3D39384D-1280-4926-99EA-B9C1FE3DAE15}"/>
+    </worksheet>
+    <worksheet name="Categories A-Z">
+      <table>
+        <view>
+          <datasources>
+            <datasource name="federated.4c370429117d77bfea985a15eb369dfd"/>
+          </datasources>
+          <datasource-dependencies datasource="federated.4c370429117d77bfea985a15eb369dfd">
+            <column datatype="string" name="[category]" role="dimension" type="nominal"/>
+            <column-instance column="[category]" derivation="None" name="[none:category:nk]" pivot="key" type="nominal"/>
+          </datasource-dependencies>
+          <sort class="categorical" direction="ASC" name="[none:category:nk]"/>
+          <aggregation value="true"/>
+        </view>
+        <style/>
+        <panes>
+          <pane selection-relaxation-option="selection-relaxation-allow">
+            <view>
+              <breakdown value="auto"/>
+            </view>
+            <mark class="Bar"/>
+          </pane>
+        </panes>
+        <rows>[federated.4c370429117d77bfea985a15eb369dfd].[sales]</rows>
+        <cols>[federated.4c370429117d77bfea985a15eb369dfd].[category]</cols>
+      </table>
+      <simple-id uuid="{D4F26D09-6BB0-4791-BF9D-583722484614}"/>
+    </worksheet>
+  </worksheets>
+  <windows source-height="30">
+    <window class="worksheet" maximized="true" name="Top Products by Sales (DESC)">
+      <cards>
+        <edge name="left">
+          <strip size="160">
+            <card type="pages"/>
+            <card type="filters"/>
+            <card type="marks"/>
+          </strip>
+        </edge>
+        <edge name="top">
+          <strip size="2147483647">
+            <card type="columns"/>
+          </strip>
+          <strip size="2147483647">
+            <card type="rows"/>
+          </strip>
+          <strip size="31">
+            <card type="title"/>
+          </strip>
+        </edge>
+      </cards>
+      <simple-id uuid="{A2DCB30B-3956-419B-865F-E9CA6979DE5F}"/>
+    </window>
+    <window class="worksheet" name="Lowest Profit by Region (ASC)">
+      <cards>
+        <edge name="left">
+          <strip size="160">
+            <card type="pages"/>
+            <card type="filters"/>
+            <card type="marks"/>
+          </strip>
+        </edge>
+        <edge name="top">
+          <strip size="2147483647">
+            <card type="columns"/>
+          </strip>
+          <strip size="2147483647">
+            <card type="rows"/>
+          </strip>
+          <strip size="31">
+            <card type="title"/>
+          </strip>
+        </edge>
+      </cards>
+      <simple-id uuid="{04D3186B-C500-44D3-9A6D-7C1EBBC3DA5D}"/>
+    </window>
+    <window class="worksheet" name="Categories A-Z">
+      <cards>
+        <edge name="left">
+          <strip size="160">
+            <card type="pages"/>
+            <card type="filters"/>
+            <card type="marks"/>
+          </strip>
+        </edge>
+        <edge name="top">
+          <strip size="2147483647">
+            <card type="columns"/>
+          </strip>
+          <strip size="2147483647">
+            <card type="rows"/>
+          </strip>
+          <strip size="31">
+            <card type="title"/>
+          </strip>
+        </edge>
+      </cards>
+      <simple-id uuid="{93741638-3C22-4655-8668-FFEA5DCBFAE7}"/>
+    </window>
+  </windows>
+  <thumbnails>
+    <thumbnail height="384" name="Sheet 1" width="384">
+      iVBORw0KGgoAAAANSUhEUgAAAYAAAAGACAYAAACkx7W/AAAACXBIWXMAAA7DAAAOwwHHb6hk
+      AAAFXUlEQVR4nO3VMQEAIAzAMMC/5yFjRxMF/XpnZg4AOW87AIAdBgAQZQAAUQYAEGUAAFEG
+      ABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAA
+      UQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBl
+      AABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYA
+      EGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABR
+      BgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUA
+      AFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQ
+      ZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEG
+      ABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAA
+      UQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBl
+      AABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYA
+      EGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABR
+      BgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUA
+      AFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQ
+      ZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEG
+      ABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAA
+      UQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBl
+      AABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYA
+      EGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABR
+      BgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUA
+      AFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQ
+      ZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEG
+      ABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAA
+      UQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBl
+      AABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEGABBlAABRBgAQZQAAUQYA
+      EGUAAFEGABBlAABRBgAQZQAAUQYAEGUAAFEfFxoG/IiMv0YAAAAASUVORK5CYII=
+    </thumbnail>
+  </thumbnails>
+</workbook>

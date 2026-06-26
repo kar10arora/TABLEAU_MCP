@@ -85,6 +85,7 @@ class TableauXMLCompiler:
                 col_field = sheet.get("column_field", "")
                 row_field = sheet.get("row_field", "")
                 sort_cfg = sheet.get("sort")          # optional sort block
+                filters_cfg = sheet.get("filters")    # optional filters list
 
                 # Determine datatypes from schema
                 col_datatype, col_role, col_type = self._field_meta(col_field, schema)
@@ -105,6 +106,7 @@ class TableauXMLCompiler:
                     uuid=sheet_uuid,
                     sort_cfg=sort_cfg,
                     schema=schema,
+                    filters_cfg=filters_cfg,
                 )
                 win_xml = self._build_window(
                     name=sheet["name"],
@@ -228,7 +230,8 @@ class TableauXMLCompiler:
                          col_datatype, col_role, col_type,
                          row_datatype, row_role, row_type,
                          mark_type, uuid,
-                         sort_cfg=None, schema=None) -> str:
+                         sort_cfg=None, schema=None,
+                         filters_cfg=None) -> str:
 
         cols_ref = f"[{ds_id}].[{cols}]" if cols else ""
         rows_ref = f"[{ds_id}].[{rows}]" if rows else ""
@@ -246,6 +249,13 @@ class TableauXMLCompiler:
             schema=schema,
         )
 
+        # ── Build filter XML ──────────────────────────────────────────
+        filters_xml = self._build_filters_xml(
+            ds_id=ds_id,
+            filters=filters_cfg,
+            schema=schema,
+        ) if filters_cfg else ""
+
         return f"""<worksheet name='{name}'>
   <table>
     <view>
@@ -254,9 +264,9 @@ class TableauXMLCompiler:
       </datasources>
       <datasource-dependencies datasource='{ds_id}'>
         <column datatype='{col_datatype}' name='[{cols}]' role='{col_role}' type='{col_type}' />
-        <column datatype='{row_datatype}' name='[{rows}]' role='{row_role}' type='{row_type}' />{col_instances}
-      </datasource-dependencies>
-      <aggregation value='true' />{shelf_sorts}
+        <column datatype='{row_datatype}' name='[{rows}]' role='{row_role}' type='{row_type}' />{col_instances}{filters_xml}
+      </datasource-dependencies>{shelf_sorts}
+      <aggregation value='true' />
     </view>
     <style />
     <panes>
@@ -298,6 +308,65 @@ class TableauXMLCompiler:
   </cards>
   <simple-id uuid='{uuid}' />
 </window>"""
+
+    # ------------------------------------------------------------------
+    # Filter XML builder (Story 2.3)
+    # ------------------------------------------------------------------
+
+    def _build_filters_xml(self, ds_id: str, filters: list, schema) -> str:
+        """
+        Build filter XML elements to inject inside <datasource-dependencies>.
+
+        Each filter is a dict:
+            {"field": "region", "operator": "=", "values": ["USA", "UK"]}
+
+        Only categorical (dimension) filters are supported in this MVP.
+        Multiple values → multi-member groupfilter.
+
+        Returns XML string (empty if no valid filters).
+        """
+        if not filters:
+            return ""
+
+        lines = []
+        for f in filters:
+            field = f.get("field", "")
+            values = f.get("values", [])
+            if not field or not values:
+                continue
+
+            # Determine the field's datatype so we can emit the right column decl
+            datatype, role, ftype = self._field_meta(field, schema)
+
+            # Column declaration for the filter field
+            lines.append(
+                f"\n        <column datatype='{datatype}' name='[{field}]' "
+                f"role='{role}' type='{ftype}' />"
+            )
+
+            if len(values) == 1:
+                # Single-value categorical filter
+                member = values[0]
+                lines.append(f"""
+        <filter class='categorical' column='[{field}]'>
+          <groupfilter function='member' level='[{field}]'>
+            <groupfilter function='level-members' level='[{field}]' member='{member}' />
+          </groupfilter>
+        </filter>""")
+            else:
+                # Multi-value categorical filter
+                member_elements = "\n".join(
+                    f"            <groupfilter function='level-members' level='[{field}]' member='{v}' />"
+                    for v in values
+                )
+                lines.append(f"""
+        <filter class='categorical' column='[{field}]'>
+          <groupfilter function='union' level='[{field}]'>
+{member_elements}
+          </groupfilter>
+        </filter>""")
+
+        return "".join(lines)
 
     # ------------------------------------------------------------------
     # Sort XML builder (Story 2.2)

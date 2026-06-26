@@ -103,6 +103,19 @@ Include a "sort" block when the user asks for ordering:
 **No sort** (omit the "sort" key entirely):
 - When user does not indicate any ordering preference
 
+## Filter Selection Rules
+
+Include a "filters" array when the user wants to restrict data to specific values:
+
+**Categorical filter (exact match)**:
+- Keywords: "only", "just", "where", "for", "in", "from", "show only", "filter by",
+  "limited to", "specifically", "within"
+- Example: "show sales for USA only" → filter region = ["USA"]
+- Example: "sales in Electronics and Furniture" → filter category = ["Electronics", "Furniture"]
+
+**No filter** (omit "filters" entirely):
+- When user does not mention specific values to include/exclude
+
 ## Output Format
 
 Return ONLY valid JSON, no explanations:
@@ -117,21 +130,31 @@ Return ONLY valid JSON, no explanations:
         "field": "<measure field to sort by>",
         "direction": "DESC | ASC",
         "type": "field | alphabetical"
-      }}
+      }},
+      "filters": [
+        {{
+          "field": "<dimension field to filter>",
+          "operator": "=",
+          "values": ["<value1>", "<value2>"]
+        }}
+      ]
     }}
   ]
 }}
 
 Note: Omit the "sort" key entirely when no sorting is requested.
+Note: Omit the "filters" key entirely when no filtering is requested.
 
 Rules:
 1. Use ONLY field names from the schema above — never invent fields.
 2. column_field must come from the dimensions list.
 3. row_field must come from the measures list.
 4. sort.field must come from the measures list (for field sort) or dimensions list (for alphabetical).
-5. Create 1-3 sheets based on what the request asks for.
-6. When the request mentions a date/time dimension, prefer Line mark type.
-7. Return ONLY the JSON object — no markdown, no commentary.
+5. filters[].field must come from the dimensions list.
+6. filters[].values must contain actual data values matching the field (use realistic values from sample_values if known).
+7. Create 1-3 sheets based on what the request asks for.
+8. When the request mentions a date/time dimension, prefer Line mark type.
+9. Return ONLY the JSON object — no markdown, no commentary.
 
 Generate the blueprint now:"""
 
