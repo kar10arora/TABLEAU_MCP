@@ -116,8 +116,8 @@ class TestBuildSortXml:
         )
         assert "<shelf-sorts>" in ss
         assert "direction='ASC'" in ss
-        # Alphabetical sort should NOT contain measure-to-sort-by
-        assert "measure-to-sort-by" not in ss
+        # Alphabetical sort still requires measure-to-sort-by per DTD
+        assert "measure-to-sort-by" in ss
 
     def test_alphabetical_sort_desc(self):
         _, ss = self.compiler._build_sort_xml(
@@ -215,8 +215,8 @@ class TestSortInGeneratedWorkbook:
             sorts = _shelf_sorts(path, "Alpha Sort")
             assert len(sorts) == 1
             assert sorts[0].get("direction") == "ASC"
-            # Alphabetical: no measure-to-sort-by attribute
-            assert sorts[0].get("measure-to-sort-by") is None
+            # measure-to-sort-by is required by DTD even for alphabetical
+            assert sorts[0].get("measure-to-sort-by") is not None
         finally:
             os.unlink(path)
 

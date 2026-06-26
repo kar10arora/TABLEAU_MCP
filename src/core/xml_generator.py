@@ -233,13 +233,22 @@ class TableauXMLCompiler:
                          sort_cfg=None, schema=None,
                          filters_cfg=None) -> str:
 
-        cols_ref = f"[{ds_id}].[{cols}]" if cols else ""
-        rows_ref = f"[{ds_id}].[{rows}]" if rows else ""
+        # ── Column-instance name helpers (needed for shelf refs) ───────
+        def _ci_name(field, ftype):
+            return f"[sum:{field}:qk]" if ftype == "quantitative" else f"[none:{field}:nk]"
 
-        # ── Build column-instance declarations for sorted fields ───────
-        # Always emit column-instances for both shelved fields so Tableau
-        # can resolve them; additionally include the sort field if different.
-        col_instances, shelf_sorts = self._build_sort_xml(
+        def _derivation(ftype):
+            return "Sum" if ftype == "quantitative" else "None"
+
+        col_ci = _ci_name(cols, col_type)   # e.g. [none:product:nk]
+        row_ci = _ci_name(rows, row_type)   # e.g. [sum:sales:qk]
+
+        # ── Shelf references use CI names (matches automated_test.twb) ─
+        cols_ref = f"[{ds_id}].{col_ci}" if cols else ""
+        rows_ref = f"[{ds_id}].{row_ci}" if rows else ""
+
+        # ── Column-instance declarations + shelf-sorts XML ─────────────
+        col_instances, shelf_sorts_xml = self._build_sort_xml(
             ds_id=ds_id,
             col_field=cols,
             row_field=rows,
@@ -248,6 +257,15 @@ class TableauXMLCompiler:
             sort_cfg=sort_cfg,
             schema=schema,
         )
+
+        # Always emit column-instances (needed because <rows>/<cols> use CI names)
+        if not col_instances:
+            col_instances = (
+                f"\n        <column-instance column='[{cols}]' derivation='{_derivation(col_type)}' "
+                f"name='{col_ci}' pivot='key' type='{col_type}' />"
+                f"\n        <column-instance column='[{rows}]' derivation='{_derivation(row_type)}' "
+                f"name='{row_ci}' pivot='key' type='{row_type}' />"
+            )
 
         # ── Build filter XML ──────────────────────────────────────────
         filters_xml = self._build_filters_xml(
@@ -265,7 +283,7 @@ class TableauXMLCompiler:
       <datasource-dependencies datasource='{ds_id}'>
         <column datatype='{col_datatype}' name='[{cols}]' role='{col_role}' type='{col_type}' />
         <column datatype='{row_datatype}' name='[{rows}]' role='{row_role}' type='{row_type}' />{col_instances}{filters_xml}
-      </datasource-dependencies>{shelf_sorts}
+      </datasource-dependencies>{shelf_sorts_xml}
       <aggregation value='true' />
     </view>
     <style />
@@ -375,20 +393,34 @@ class TableauXMLCompiler:
     def _build_sort_xml(self, ds_id, col_field, row_field,
                         col_type, row_type, sort_cfg, schema):
         """
-        Build column-instance declarations and optional <shelf-sorts> XML.
+        Build column-instance declarations and shelf-sort XML.
 
-        Tableau requires <column-instance> elements for every field that
-        participates in shelf expressions or sorting.
+        Pattern taken directly from a working Tableau TWB (automated_test.twb):
 
-        Args:
-            ds_id:     datasource federated name
-            col_field: dimension on Columns shelf
-            row_field: measure on Rows shelf
-            col_type:  Tableau type for col_field ("nominal" | "quantitative")
-            row_type:  Tableau type for row_field
-            sort_cfg:  Optional dict:
-                         {"field": str, "direction": "ASC"|"DESC", "type": "field"|"alphabetical"}
-            schema:    Full schema dict (used to check sort field role)
+          <datasource-dependencies datasource='...'>
+            <column-instance column='[product_id]' derivation='None'
+                             name='[none:product_id:nk]' pivot='key' type='nominal'/>
+            <column-instance column='[rating]' derivation='Avg'
+                             name='[avg:rating:qk]' pivot='key' type='quantitative'/>
+          </datasource-dependencies>
+          <shelf-sorts>
+            <shelf-sort-v2
+              dimension-to-sort='[ds_id].[none:product_id:nk]'
+              direction='ASC'
+              is-on-innermost-dimension='true'
+              measure-to-sort-by='[ds_id].[avg:rating:qk]'
+              shelf='columns' />
+          </shelf-sorts>
+
+        Key rules:
+        - Uses <shelf-sorts>/<shelf-sort-v2>, NOT <sort>
+        - dimension-to-sort  = fully qualified: [ds_id].[none:col_field:nk]
+        - measure-to-sort-by = fully qualified: [ds_id].[sum:row_field:qk]
+        - shelf = 'columns' because the DIMENSION is on the Columns shelf
+        - <rows> and <cols> also reference CI names, not raw field names
+        - <shelf-sorts> sits INSIDE <view>, sibling of <datasource-dependencies>
+
+        Alphabetical sort: same structure but omit measure-to-sort-by.
 
         Returns:
             (col_instances_xml: str, shelf_sorts_xml: str)
@@ -404,10 +436,7 @@ class TableauXMLCompiler:
         sort_type = sort_cfg.get("type", "field").lower()
         sort_field = sort_cfg.get("field", "")
 
-        # ── Derive column-instance name tokens ────────────────────────
-        # Tableau column-instance naming convention:
-        #   dimension  → [none:<field>:nk]
-        #   measure    → [sum:<field>:qk]
+        # ── Column-instance name helpers ──────────────────────────────
         def _ci_name(field, ftype):
             if ftype == "quantitative":
                 return f"[sum:{field}:qk]"
@@ -417,8 +446,8 @@ class TableauXMLCompiler:
             return "Sum" if ftype == "quantitative" else "None"
 
         # Column-instances for the two shelved fields
-        col_ci_name = _ci_name(col_field, col_type)
-        row_ci_name = _ci_name(row_field, row_type)
+        col_ci_name = _ci_name(col_field, col_type)   # dim on Columns shelf
+        row_ci_name = _ci_name(row_field, row_type)   # measure on Rows shelf
 
         ci_lines = [
             f"\n        <column-instance column='[{col_field}]' derivation='{_derivation(col_type)}' "
@@ -427,7 +456,7 @@ class TableauXMLCompiler:
             f"name='{row_ci_name}' pivot='key' type='{row_type}' />",
         ]
 
-        # If sort field is different from both shelved fields add its CI too
+        # Add CI for explicit sort field if different from both shelved fields
         if sort_field and sort_field not in (col_field, row_field):
             _, _, sort_ftype = self._field_meta(sort_field, schema)
             sort_ci_name = _ci_name(sort_field, sort_ftype)
@@ -437,32 +466,44 @@ class TableauXMLCompiler:
                 f"name='{sort_ci_name}' pivot='key' type='{sort_ftype}' />"
             )
         else:
-            # sort field is one of the shelved fields — pick the correct CI
-            if sort_field == col_field:
-                sort_ci_name = col_ci_name
-            else:
-                sort_ci_name = row_ci_name
+            sort_ci_name = col_ci_name if sort_field == col_field else row_ci_name
 
         col_instances_xml = "".join(ci_lines)
 
         # ── Build <shelf-sorts> ────────────────────────────────────────
+        # The dimension (col_field) lives on the Columns shelf → shelf='columns'
+        dim_fq  = f"[{ds_id}].{col_ci_name}"    # fully qualified dim CI
+
         if sort_type == "alphabetical":
-            # Sort the dimension column alphabetically
-            dim_ci = _ci_name(col_field, col_type)
-            shelf_sorts_xml = f"""
-    <shelf-sorts>
-      <shelf-sort-v2 direction='{direction}' field='[{ds_id}].{dim_ci}' is-on-innermost-dimension='true' shelf='rows' />
-    </shelf-sorts>"""
+            # Alphabetical sort — measure-to-sort-by is still required by DTD
+            # Point it to the row measure (the aggregated field on the Rows shelf)
+            meas_fq = f"[{ds_id}].{row_ci_name}"
+            shelf_sorts_xml = (
+                f"\n    <shelf-sorts>\n"
+                f"      <shelf-sort-v2 dimension-to-sort='{dim_fq}' "
+                f"direction='{direction}' "
+                f"is-on-innermost-dimension='true' "
+                f"measure-to-sort-by='{meas_fq}' "
+                f"shelf='columns' />\n"
+                f"    </shelf-sorts>"
+            )
         else:
-            # Default: sort dimension by measure value (field sort)
-            # dimension-to-sort = the CI of the column (dimension) shelf
-            # measure-to-sort-by = the CI of the measure (row) shelf or explicit sort field
-            dim_ci = _ci_name(col_field, col_type)
-            measure_ci = _ci_name(sort_field, row_type) if sort_field else row_ci_name
-            shelf_sorts_xml = f"""
-    <shelf-sorts>
-      <shelf-sort-v2 dimension-to-sort='[{ds_id}].{dim_ci}' direction='{direction}' is-on-innermost-dimension='true' measure-to-sort-by='[{ds_id}].{measure_ci}' shelf='rows' />
-    </shelf-sorts>"""
+            # Field / measure sort
+            if sort_field and sort_field != col_field:
+                _, _, sf_type = self._field_meta(sort_field, schema)
+                meas_fq = f"[{ds_id}].{_ci_name(sort_field, sf_type)}"
+            else:
+                meas_fq = f"[{ds_id}].{row_ci_name}"   # e.g. [ds].[sum:sales:qk]
+
+            shelf_sorts_xml = (
+                f"\n    <shelf-sorts>\n"
+                f"      <shelf-sort-v2 dimension-to-sort='{dim_fq}' "
+                f"direction='{direction}' "
+                f"is-on-innermost-dimension='true' "
+                f"measure-to-sort-by='{meas_fq}' "
+                f"shelf='columns' />\n"
+                f"    </shelf-sorts>"
+            )
 
         return col_instances_xml, shelf_sorts_xml
 
