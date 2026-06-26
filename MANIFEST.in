@@ -1,0 +1,6 @@
+recursive-include src/tableau_mcp/templates *.twb
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+include README.md
+include LICENSE
+include .env.example

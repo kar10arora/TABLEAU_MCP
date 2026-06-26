@@ -8,6 +8,7 @@ from src.core.xml_generator import TableauXMLCompiler
 from src.llm.client import LLMClient
 import os
 import json
+from src.tableau_mcp.paths import get_output_dir,get_template_path
 
 # Initialize FastMCP server
 mcp = FastMCP("tableau-mcp-server")
@@ -16,7 +17,7 @@ mcp = FastMCP("tableau-mcp-server")
 schema_profiler = SchemaProfiler()
 llm_client = LLMClient()
 
-TEMPLATE_PATH = os.getenv("TEMPLATE_DIR", "./templates") + "/base_template.twb"
+TEMPLATE_PATH = get_template_path()
 
 
 @mcp.tool()
@@ -63,7 +64,7 @@ def generate_tableau_workbook(
         
         # Step 3: Compile workbook
         if output_path is None:
-            output_dir = os.getenv("OUTPUT_DIR", "./examples/generated_workbooks")
+            output_dir = get_output_dir(create=True)
             os.makedirs(output_dir, exist_ok=True)
             output_path = os.path.join(output_dir, "generated_workbook.twb")
         
