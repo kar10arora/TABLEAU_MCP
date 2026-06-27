@@ -12,7 +12,7 @@ import hashlib
 import uuid as uuid_mod
 from lxml import etree
 from typing import Dict
-from src.core.uuid_utils import generate_tableau_uuid
+from tableau_mcp.core.uuid_utils import generate_tableau_uuid
 
 
 class TableauXMLCompiler:
@@ -56,7 +56,7 @@ class TableauXMLCompiler:
             abs_path = os.path.abspath(dataset_path)
             if schema is None:
                 # Auto-profile if no schema provided
-                from src.core.schema_profiler import SchemaProfiler
+                from tableau_mcp.core.schema_profiler import SchemaProfiler
                 schema = SchemaProfiler().profile_dataset(abs_path)
             self._rebuild_datasource(root, abs_path, schema)
 

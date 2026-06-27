@@ -10,8 +10,8 @@ import os
 # Add src to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src.llm.client import LLMClient
-from src.core.schema_profiler import SchemaProfiler
+from tableau_mcp.llm.client import LLMClient
+from tableau_mcp.core.schema_profiler import SchemaProfiler
 
 
 @pytest.mark.requires_api

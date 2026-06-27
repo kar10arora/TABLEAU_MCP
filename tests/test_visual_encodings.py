@@ -18,8 +18,8 @@ from lxml import etree
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from src.core.schema_profiler import SchemaProfiler
-from src.core.xml_generator import TableauXMLCompiler
+from tableau_mcp.core.schema_profiler import SchemaProfiler
+from tableau_mcp.core.xml_generator import TableauXMLCompiler
 
 TEMPLATE = "templates/base_template.twb"
 DATASET = "examples/sample_datasets/sales_sample.csv"

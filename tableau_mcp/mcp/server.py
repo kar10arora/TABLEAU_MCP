@@ -3,12 +3,12 @@ FastMCP server for Tableau workbook generation.
 """
 
 from fastmcp import FastMCP
-from src.core.schema_profiler import SchemaProfiler
-from src.core.xml_generator import TableauXMLCompiler
-from src.llm.client import LLMClient
+from tableau_mcp.core.schema_profiler import SchemaProfiler
+from tableau_mcp.core.xml_generator import TableauXMLCompiler
+from tableau_mcp.llm.client import LLMClient
 import os
 import json
-from src.tableau_mcp.paths import get_output_dir,get_template_path
+from tableau_mcp.paths import get_output_dir,get_template_path
 
 # Initialize FastMCP server
 mcp = FastMCP("tableau-mcp-server")

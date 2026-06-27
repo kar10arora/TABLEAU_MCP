@@ -5,8 +5,8 @@ Outputs to examples/generated_workbooks/
 """
 
 import os
-from src.core.schema_profiler import SchemaProfiler
-from src.core.xml_generator import TableauXMLCompiler
+from tableau_mcp.core.schema_profiler import SchemaProfiler
+from tableau_mcp.core.xml_generator import TableauXMLCompiler
 
 DATASET   = "examples/sample_datasets/sales_sample.csv"
 TEMPLATE  = "templates/base_template.twb"
