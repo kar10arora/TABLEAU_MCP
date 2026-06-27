@@ -15,9 +15,16 @@ mcp = FastMCP("tableau-mcp-server")
 
 # Initialize components
 schema_profiler = SchemaProfiler()
-llm_client = LLMClient()
-
+_llm_client = None
 TEMPLATE_PATH = get_template_path()
+
+
+def _get_llm_client():
+    """Lazy-load LLM client only when needed."""
+    global _llm_client
+    if _llm_client is None:
+        _llm_client = LLMClient()
+    return _llm_client
 
 
 @mcp.tool()
@@ -60,7 +67,7 @@ def generate_tableau_workbook(
         schema = schema_profiler.profile_dataset(dataset_path)
         
         # Step 2: Generate blueprint with LLM
-        blueprint = llm_client.generate_blueprint(schema, user_request)
+        blueprint = _get_llm_client().generate_blueprint(schema, user_request)
         
         # Step 3: Compile workbook
         if output_path is None:
