@@ -13,6 +13,11 @@ setup(
     url="https://github.com/kar10arora/TABLEAU_MCP",
     packages=find_packages(),
     include_package_data=True,
+    entry_points={
+        'console_scripts': [
+            'tableau-mcp=tableau_mcp.mcp.server:main',
+        ],
+    },
     package_data={
         'tableau_mcp': ['templates/*.twb'],
     },

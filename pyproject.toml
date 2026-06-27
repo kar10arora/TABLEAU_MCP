@@ -33,6 +33,16 @@ dependencies = [
     "google-generativeai>=0.3.0",
 ]
 
+[project.scripts]
+tableau-mcp = "tableau_mcp.mcp.server:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["tableau_mcp*"]
+
+[tool.setuptools.package-data]
+"tableau_mcp" = ["templates/*.twb"]
+
 [project.optional-dependencies]
 dev = [
     "pytest>=7.4.0",

@@ -86,6 +86,10 @@ def generate_tableau_workbook(
         })
 
 
-if __name__ == "__main__":
-    # Run the MCP server
+def main():
+    """Entry point for MCP server (used by PyInstaller and CLI)."""
     mcp.run()
+
+
+if __name__ == "__main__":
+    main()
