@@ -87,10 +87,15 @@ class TableauXMLCompiler:
                 sort_cfg = sheet.get("sort")          # optional sort block
                 filters_cfg = sheet.get("filters")    # optional filters list
                 encodings_cfg = sheet.get("encodings") # optional encodings (color, size, tooltip)
+                aggregation = sheet.get("aggregation") # optional aggregation function (Avg, Min, etc.)
+
+                # Use primary field for metadata lookup (handles both string and list)
+                col_field_primary = col_field[0] if isinstance(col_field, list) else col_field
+                row_field_primary = row_field[0] if isinstance(row_field, list) else row_field
 
                 # Determine datatypes from schema
-                col_datatype, col_role, col_type = self._field_meta(col_field, schema)
-                row_datatype, row_role, row_type = self._field_meta(row_field, schema)
+                col_datatype, col_role, col_type = self._field_meta(col_field_primary, schema)
+                row_datatype, row_role, row_type = self._field_meta(row_field_primary, schema)
 
                 ws_xml = self._build_worksheet(
                     name=sheet["name"],
@@ -109,6 +114,7 @@ class TableauXMLCompiler:
                     schema=schema,
                     filters_cfg=filters_cfg,
                     encodings_cfg=encodings_cfg,
+                    aggregation=aggregation,
                 )
                 win_xml = self._build_window(
                     name=sheet["name"],
@@ -233,56 +239,118 @@ class TableauXMLCompiler:
                          row_datatype, row_role, row_type,
                          mark_type, uuid,
                          sort_cfg=None, schema=None,
-                         filters_cfg=None, encodings_cfg=None) -> str:
+                         filters_cfg=None, encodings_cfg=None,
+                         aggregation=None) -> str:
 
-        # ── Column-instance name helpers (needed for shelf refs) ───────
+        agg = aggregation or "Sum"
+        agg_abbrev = self._get_aggregation_abbrev(agg)
+
+        # Normalize fields to lists for uniform processing
+        cols_list = cols if isinstance(cols, list) else ([cols] if cols else [])
+        rows_list = rows if isinstance(rows, list) else ([rows] if rows else [])
+
+        cols_primary = cols_list[0] if cols_list else ""
+        rows_primary = rows_list[0] if rows_list else ""
+
+        # ── Column-instance name helpers (use current aggregation) ─────
         def _ci_name(field, ftype):
-            return f"[sum:{field}:qk]" if ftype == "quantitative" else f"[none:{field}:nk]"
+            return f"[{agg_abbrev}:{field}:qk]" if ftype == "quantitative" else f"[none:{field}:nk]"
 
         def _derivation(ftype):
-            return "Sum" if ftype == "quantitative" else "None"
+            return agg if ftype == "quantitative" else "None"
 
-        col_ci = _ci_name(cols, col_type)   # e.g. [none:product:nk]
-        row_ci = _ci_name(rows, row_type)   # e.g. [sum:sales:qk]
+        # ── Shelf references (cols_ref / rows_ref) ─────────────────────
+        if len(cols_list) > 1:
+            cols_ref = self._build_field_reference(cols_list, ds_id, "dimension")
+        elif cols_list:
+            cols_ref = f"[{ds_id}].{_ci_name(cols_primary, col_type)}"
+        else:
+            cols_ref = ""
 
-        # ── Shelf references use CI names (matches automated_test.twb) ─
-        cols_ref = f"[{ds_id}].{col_ci}" if cols else ""
-        rows_ref = f"[{ds_id}].{row_ci}" if rows else ""
+        if len(rows_list) > 1:
+            rows_ref = self._build_field_reference(rows_list, ds_id, "measure", agg)
+        elif rows_list:
+            rows_ref = f"[{ds_id}].{_ci_name(rows_primary, row_type)}"
+        else:
+            rows_ref = ""
+
+        # ── Column declarations for datasource-dependencies ────────────
+        # One <column> per field (handles multi-dimension arrays)
+        col_field_decls = ""
+        for field in cols_list:
+            if field:
+                dt, role, ftype = self._field_meta(field, schema)
+                col_field_decls += (
+                    f"\n        <column datatype='{dt}' name='[{field}]' "
+                    f"role='{role}' type='{ftype}' />"
+                )
+        for field in rows_list:
+            if field:
+                dt, role, ftype = self._field_meta(field, schema)
+                col_field_decls += (
+                    f"\n        <column datatype='{dt}' name='[{field}]' "
+                    f"role='{role}' type='{ftype}' />"
+                )
 
         # ── Column-instance declarations + shelf-sorts XML ─────────────
         col_instances, shelf_sorts_xml = self._build_sort_xml(
             ds_id=ds_id,
-            col_field=cols,
-            row_field=rows,
+            col_field=cols_primary,
+            row_field=rows_primary,
             col_type=col_type,
             row_type=row_type,
             sort_cfg=sort_cfg,
             schema=schema,
+            aggregation=agg,
         )
 
-        # Always emit column-instances (needed because <rows>/<cols> use CI names)
+        # Build column-instances for all fields (augment sort-provided or build from scratch)
         if not col_instances:
-            col_instances = (
-                f"\n        <column-instance column='[{cols}]' derivation='{_derivation(col_type)}' "
-                f"name='{col_ci}' pivot='key' type='{col_type}' />"
-                f"\n        <column-instance column='[{rows}]' derivation='{_derivation(row_type)}' "
-                f"name='{row_ci}' pivot='key' type='{row_type}' />"
-            )
+            ci_parts = []
+            for field in cols_list:
+                if field:
+                    _, _, ftype = self._field_meta(field, schema)
+                    ci_parts.append(
+                        f"\n        <column-instance column='[{field}]' "
+                        f"derivation='{_derivation(ftype)}' "
+                        f"name='{_ci_name(field, ftype)}' pivot='key' type='{ftype}' />"
+                    )
+            for field in rows_list:
+                if field:
+                    _, _, ftype = self._field_meta(field, schema)
+                    ci_parts.append(
+                        f"\n        <column-instance column='[{field}]' "
+                        f"derivation='{_derivation(ftype)}' "
+                        f"name='{_ci_name(field, ftype)}' pivot='key' type='{ftype}' />"
+                    )
+            col_instances = "".join(ci_parts)
+        elif len(cols_list) > 1:
+            # Sort gave instances for the primary field; prepend extras for additional dims
+            extra_ci = []
+            for field in cols_list[1:]:
+                if field:
+                    _, _, ftype = self._field_meta(field, schema)
+                    extra_ci.append(
+                        f"\n        <column-instance column='[{field}]' "
+                        f"derivation='{_derivation(ftype)}' "
+                        f"name='{_ci_name(field, ftype)}' pivot='key' type='{ftype}' />"
+                    )
+            col_instances = "".join(extra_ci) + col_instances
 
-        # ── Add declarations for filtered fields (must be in datasource-dependencies) ──
+        # ── Add declarations for filtered fields ───────────────────────
         filter_field_decls = self._build_filter_field_declarations(filters_cfg, schema)
 
-        # ── Add declarations for encoded fields (color, size, tooltip) ──
+        # ── Add declarations for encoded fields ────────────────────────
         encoding_field_decls = self._build_encoding_field_declarations(encodings_cfg, schema)
 
-        # ── Build filter XML (goes AFTER datasource-dependencies, not inside) ──
+        # ── Build filter XML ───────────────────────────────────────────
         filters_xml, slices_xml = self._build_filters_xml_and_slices(
             ds_id=ds_id,
             filters=filters_cfg,
             schema=schema,
         ) if filters_cfg else ("", "")
 
-        # ── Build encoding XML (goes AFTER datasource-dependencies) ──
+        # ── Build encoding XML ─────────────────────────────────────────
         encodings_xml = self._build_encodings_xml(
             ds_id=ds_id,
             encodings=encodings_cfg,
@@ -295,9 +363,7 @@ class TableauXMLCompiler:
       <datasources>
         <datasource name='{ds_id}' />
       </datasources>
-      <datasource-dependencies datasource='{ds_id}'>
-        <column datatype='{col_datatype}' name='[{cols}]' role='{col_role}' type='{col_type}' />
-        <column datatype='{row_datatype}' name='[{rows}]' role='{row_role}' type='{row_type}' />{col_instances}{filter_field_decls}{encoding_field_decls}
+      <datasource-dependencies datasource='{ds_id}'>{col_field_decls}{col_instances}{filter_field_decls}{encoding_field_decls}
       </datasource-dependencies>{filters_xml}{shelf_sorts_xml}{slices_xml}
       <aggregation value='true' />
     </view>
@@ -572,7 +638,8 @@ class TableauXMLCompiler:
     # ------------------------------------------------------------------
 
     def _build_sort_xml(self, ds_id, col_field, row_field,
-                        col_type, row_type, sort_cfg, schema):
+                        col_type, row_type, sort_cfg, schema,
+                        aggregation=None):
         """
         Build column-instance declarations and shelf-sort XML.
 
@@ -610,6 +677,9 @@ class TableauXMLCompiler:
         if not sort_cfg:
             return "", ""
 
+        agg = aggregation or "Sum"
+        agg_abbrev = self._get_aggregation_abbrev(agg)
+
         direction = sort_cfg.get("direction", "DESC").upper()
         if direction not in ("ASC", "DESC"):
             direction = "DESC"
@@ -617,14 +687,14 @@ class TableauXMLCompiler:
         sort_type = sort_cfg.get("type", "field").lower()
         sort_field = sort_cfg.get("field", "")
 
-        # ── Column-instance name helpers ──────────────────────────────
+        # ── Column-instance name helpers (use current aggregation) ────
         def _ci_name(field, ftype):
             if ftype == "quantitative":
-                return f"[sum:{field}:qk]"
+                return f"[{agg_abbrev}:{field}:qk]"
             return f"[none:{field}:nk]"
 
         def _derivation(ftype):
-            return "Sum" if ftype == "quantitative" else "None"
+            return agg if ftype == "quantitative" else "None"
 
         # Column-instances for the two shelved fields
         col_ci_name = _ci_name(col_field, col_type)   # dim on Columns shelf
@@ -691,6 +761,47 @@ class TableauXMLCompiler:
     # ------------------------------------------------------------------
     # Schema helpers
     # ------------------------------------------------------------------
+
+    def _get_aggregation_abbrev(self, agg_name: str) -> str:
+        """Map aggregation function name to Tableau abbreviation."""
+        mapping = {
+            "Sum": "sum",
+            "Avg": "avg",
+            "Min": "min",
+            "Max": "max",
+            "Median": "median",
+            "Count": "cnt",
+            "CountD": "countd",
+            "StdDev": "stdev",
+        }
+        return mapping.get(agg_name, "sum")
+
+    def _build_field_reference(self, field_or_fields, ds_id: str,
+                                field_type: str = "dimension",
+                                aggregation: str = None) -> str:
+        """
+        Build Tableau shelf reference(s) for XML.
+
+        Handles single fields (str) and multi-field arrays that get concatenated
+        with " + " so Tableau renders them as a combined axis.
+
+        field_type: "dimension" → nk suffix, "measure" → qk suffix + aggregation
+        """
+        agg_abbrev = self._get_aggregation_abbrev(aggregation or "Sum")
+
+        if isinstance(field_or_fields, list):
+            refs = []
+            for field in field_or_fields:
+                if field_type == "dimension":
+                    refs.append(f'[{ds_id}].[none:{field}:nk]')
+                else:
+                    refs.append(f'[{ds_id}].[{agg_abbrev}:{field}:qk]')
+            return ' + '.join(refs)
+        else:
+            if field_type == "dimension":
+                return f'[{ds_id}].[none:{field_or_fields}:nk]'
+            else:
+                return f'[{ds_id}].[{agg_abbrev}:{field_or_fields}:qk]'
 
     def _field_meta(self, field_name: str, schema: Dict):
         """Return (datatype, role, type) tuple for a field name from schema."""

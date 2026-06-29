@@ -116,6 +116,27 @@ Include a "filters" array when the user wants to restrict data to specific value
 **No filter** (omit "filters" entirely):
 - When user does not mention specific values to include/exclude
 
+## Aggregation Function Selection Rules
+
+Extract the aggregation function keyword from the user request and include "aggregation" in the blueprint:
+
+Keyword Mapping:
+- "average", "avg", "mean", "typical" → "Avg"
+- "median", "mid", "midpoint", "middle value" → "Median"
+- "minimum", "min", "lowest", "least" → "Min"
+- "maximum", "max", "highest", "greatest", "most" → "Max"
+- "total", "sum", "combined", "altogether" → "Sum" (default)
+- "count", "number of", "how many" → "Count"
+- "distinct count", "unique count", "unique values" → "CountD"
+- "standard deviation", "std dev", "variation" → "StdDev"
+
+Default to "Sum" if no aggregation keyword is detected. Omit the "aggregation" key entirely when defaulting to Sum.
+
+Examples:
+- "Average sales by region" → {{"aggregation": "Avg", ...}}
+- "Minimum discount by category" → {{"aggregation": "Min", ...}}
+- "Count of transactions by month" → {{"aggregation": "Count", ...}}
+
 ## Visual Encodings (Story 2.4)
 
 Include an "encodings" object to add color, size, and tooltip visual properties:
@@ -149,6 +170,7 @@ Return ONLY valid JSON, no explanations:
       "column_field": "<field from dimensions list>",
       "row_field": "<field from measures list>",
       "mark_type": "Bar | Line | Area | Circle | Automatic",
+      "aggregation": "Avg | Min | Max | Median | Count | CountD | StdDev",
       "sort": {{
         "field": "<measure field to sort by>",
         "direction": "DESC | ASC",
@@ -179,6 +201,7 @@ Return ONLY valid JSON, no explanations:
 Note: Omit the "sort" key entirely when no sorting is requested.
 Note: Omit the "filters" key entirely when no filtering is requested.
 Note: Omit the "encodings" key entirely when no color/size/tooltip is requested.
+Note: Omit the "aggregation" key entirely when the default Sum aggregation applies.
 
 Rules:
 1. Use ONLY field names from the schema above — never invent fields.
