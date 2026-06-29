@@ -82,40 +82,61 @@ class TableauXMLCompiler:
                 sheet_uuid = generate_tableau_uuid()
                 window_uuid = generate_tableau_uuid()
 
-                col_field = sheet.get("column_field", "")
-                row_field = sheet.get("row_field", "")
-                sort_cfg = sheet.get("sort")          # optional sort block
-                filters_cfg = sheet.get("filters")    # optional filters list
-                encodings_cfg = sheet.get("encodings") # optional encodings (color, size, tooltip)
-                aggregation = sheet.get("aggregation") # optional aggregation function (Avg, Min, etc.)
+                mark_type = sheet.get("mark_type", "Automatic")
+                aggregation = sheet.get("aggregation")  # optional aggregation function
 
-                # Use primary field for metadata lookup (handles both string and list)
-                col_field_primary = col_field[0] if isinstance(col_field, list) else col_field
-                row_field_primary = row_field[0] if isinstance(row_field, list) else row_field
+                if mark_type == "Text":
+                    # ── KPI / Text-mark path (Story 2.5) ──────────────────────
+                    row_field = sheet.get("row_field", "")
+                    row_field_primary = row_field[0] if isinstance(row_field, list) else row_field
+                    row_datatype, row_role, row_type = self._field_meta(row_field_primary, schema)
 
-                # Determine datatypes from schema
-                col_datatype, col_role, col_type = self._field_meta(col_field_primary, schema)
-                row_datatype, row_role, row_type = self._field_meta(row_field_primary, schema)
+                    ws_xml = self._build_kpi_worksheet(
+                        name=sheet["name"],
+                        ds_id=ds_id,
+                        row_field=row_field_primary,
+                        row_datatype=row_datatype,
+                        row_role=row_role,
+                        row_type=row_type,
+                        uuid=sheet_uuid,
+                        aggregation=aggregation,
+                        format_cfg=sheet.get("format"),
+                    )
+                else:
+                    # ── Regular chart path ─────────────────────────────────────
+                    col_field = sheet.get("column_field") or ""
+                    row_field = sheet.get("row_field", "")
+                    sort_cfg = sheet.get("sort")
+                    filters_cfg = sheet.get("filters")
+                    encodings_cfg = sheet.get("encodings")
 
-                ws_xml = self._build_worksheet(
-                    name=sheet["name"],
-                    ds_id=ds_id,
-                    cols=col_field,
-                    rows=row_field,
-                    col_datatype=col_datatype,
-                    col_role=col_role,
-                    col_type=col_type,
-                    row_datatype=row_datatype,
-                    row_role=row_role,
-                    row_type=row_type,
-                    mark_type=sheet.get("mark_type", "Automatic"),
-                    uuid=sheet_uuid,
-                    sort_cfg=sort_cfg,
-                    schema=schema,
-                    filters_cfg=filters_cfg,
-                    encodings_cfg=encodings_cfg,
-                    aggregation=aggregation,
-                )
+                    # Use primary field for metadata lookup (handles both string and list)
+                    col_field_primary = col_field[0] if isinstance(col_field, list) else col_field
+                    row_field_primary = row_field[0] if isinstance(row_field, list) else row_field
+
+                    # Determine datatypes from schema
+                    col_datatype, col_role, col_type = self._field_meta(col_field_primary, schema)
+                    row_datatype, row_role, row_type = self._field_meta(row_field_primary, schema)
+
+                    ws_xml = self._build_worksheet(
+                        name=sheet["name"],
+                        ds_id=ds_id,
+                        cols=col_field,
+                        rows=row_field,
+                        col_datatype=col_datatype,
+                        col_role=col_role,
+                        col_type=col_type,
+                        row_datatype=row_datatype,
+                        row_role=row_role,
+                        row_type=row_type,
+                        mark_type=mark_type,
+                        uuid=sheet_uuid,
+                        sort_cfg=sort_cfg,
+                        schema=schema,
+                        filters_cfg=filters_cfg,
+                        encodings_cfg=encodings_cfg,
+                        aggregation=aggregation,
+                    )
                 win_xml = self._build_window(
                     name=sheet["name"],
                     uuid=window_uuid,
@@ -242,7 +263,7 @@ class TableauXMLCompiler:
                          filters_cfg=None, encodings_cfg=None,
                          aggregation=None) -> str:
 
-        agg = aggregation or "Sum"
+        agg = self._normalize_aggregation(aggregation)
         agg_abbrev = self._get_aggregation_abbrev(agg)
 
         # Normalize fields to lists for uniform processing
@@ -407,6 +428,87 @@ class TableauXMLCompiler:
   </cards>
   <simple-id uuid='{uuid}' />
 </window>"""
+
+    # ------------------------------------------------------------------
+    # KPI / Text-mark builder (Story 2.5)
+    # ------------------------------------------------------------------
+
+    def _build_kpi_worksheet(self, name: str, ds_id: str,
+                              row_field: str, row_datatype: str,
+                              row_role: str, row_type: str,
+                              uuid: str,
+                              aggregation: str = None,
+                              format_cfg: dict = None) -> str:
+        """
+        Build a Text-mark KPI worksheet.
+
+        Unlike regular charts, KPI sheets:
+        - Have no column shelf dimension (rows/cols are empty)
+        - Show a single aggregated number via <encodings><text>
+        - Use a <style> block so the number renders large and visible
+        - Support optional number formatting via format_cfg["number_format"]
+        - Support optional font-size override via format_cfg["font_size"]
+
+        Blueprint example:
+            {"mark_type": "Text", "row_field": "sales",
+             "aggregation": "Sum",
+             "format": {"number_format": "$#,##0", "font_size": 24}}
+        """
+        agg = self._normalize_aggregation(aggregation)
+        agg_abbrev = self._get_aggregation_abbrev(agg)
+
+        ci_name = f"[{agg_abbrev}:{row_field}:qk]"
+        fq_column = f"[{ds_id}].{ci_name}"
+
+        # Optional number format attribute on the column declaration
+        num_format_attr = ""
+        if format_cfg and format_cfg.get("number_format"):
+            num_format_attr = f" default-format='{format_cfg['number_format']}'"
+
+        # Optional font-size style rule
+        font_style_rule = ""
+        if format_cfg and format_cfg.get("font_size"):
+            font_style_rule = (
+                f"\n      <style-rule element='label'>"
+                f"\n        <format attr='font-size' value='{format_cfg['font_size']}' />"
+                f"\n      </style-rule>"
+            )
+
+        return f"""<worksheet name='{name}'>
+  <table>
+    <view>
+      <datasources>
+        <datasource name='{ds_id}' />
+      </datasources>
+      <datasource-dependencies datasource='{ds_id}'>
+        <column datatype='{row_datatype}' name='[{row_field}]' role='{row_role}' type='{row_type}'{num_format_attr} />
+        <column-instance column='[{row_field}]' derivation='{agg}' name='{ci_name}' pivot='key' type='{row_type}' />
+      </datasource-dependencies>
+      <aggregation value='true' />
+    </view>
+    <style>
+      <style-rule element='mark'>
+        <format attr='size' value='2' />
+        <format attr='mark-labels-show' value='true' />
+        <format attr='mark-labels-cull' value='false' />
+      </style-rule>{font_style_rule}
+    </style>
+    <panes>
+      <pane>
+        <view>
+          <breakdown value='auto' />
+        </view>
+        <mark class='Text' />
+        <encodings>
+          <text column='{fq_column}' />
+        </encodings>
+      </pane>
+    </panes>
+    <rows />
+    <cols />
+  </table>
+  <simple-id uuid='{uuid}' />
+</worksheet>"""
 
     # ------------------------------------------------------------------
     # Filter XML builder (Story 2.3)
@@ -677,7 +779,7 @@ class TableauXMLCompiler:
         if not sort_cfg:
             return "", ""
 
-        agg = aggregation or "Sum"
+        agg = self._normalize_aggregation(aggregation)
         agg_abbrev = self._get_aggregation_abbrev(agg)
 
         direction = sort_cfg.get("direction", "DESC").upper()
@@ -762,19 +864,30 @@ class TableauXMLCompiler:
     # Schema helpers
     # ------------------------------------------------------------------
 
-    def _get_aggregation_abbrev(self, agg_name: str) -> str:
-        """Map aggregation function name to Tableau abbreviation."""
-        mapping = {
-            "Sum": "sum",
-            "Avg": "avg",
-            "Min": "min",
-            "Max": "max",
-            "Median": "median",
-            "Count": "cnt",
-            "CountD": "countd",
-            "StdDev": "stdev",
+    def _normalize_aggregation(self, agg_name: str) -> str:
+        """
+        Normalize an aggregation name to Tableau's display form regardless of input casing.
+        e.g. "SUM" → "Sum", "avg" → "Avg", "COUNTD" → "CountD"
+        """
+        display_map = {
+            "sum": "Sum", "avg": "Avg", "min": "Min", "max": "Max",
+            "median": "Median", "count": "Count", "countd": "CountD",
+            "stdev": "StdDev", "stddev": "StdDev",
         }
-        return mapping.get(agg_name, "sum")
+        if not agg_name:
+            return "Sum"
+        return display_map.get(agg_name.lower(), agg_name)
+
+    def _get_aggregation_abbrev(self, agg_name: str) -> str:
+        """Map aggregation display name to Tableau XML abbreviation (case-insensitive)."""
+        abbrev_map = {
+            "sum": "sum", "avg": "avg", "min": "min", "max": "max",
+            "median": "median", "count": "cnt", "countd": "countd",
+            "stdev": "stdev", "stddev": "stdev",
+        }
+        if not agg_name:
+            return "sum"
+        return abbrev_map.get(agg_name.lower(), "sum")
 
     def _build_field_reference(self, field_or_fields, ds_id: str,
                                 field_type: str = "dimension",
