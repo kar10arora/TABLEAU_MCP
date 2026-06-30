@@ -53,12 +53,26 @@ def generate_tableau_workbook(
 ) -> str:
     """
     Generate complete Tableau workbook from natural language request.
-    
+
+    This tool reads and analyzes the CSV file at dataset_path entirely on its own —
+    it profiles the schema, infers field types, and calls an LLM internally.
+    DO NOT use filesystem tools (read_file, read_text_file, etc.) to pre-read the CSV
+    before calling this tool; that is redundant and unnecessary.
+
+    Handles internally without any extra steps:
+    - Schema inference: dimensions, measures, data types, sample values
+    - Aggregations: Sum (default), Avg, Min, Max, Median, Count, CountD, StdDev
+    - Multiple worksheets (Bar, Line, Area, Circle, Text/KPI mark types)
+    - Sorting: ascending/descending by field value or alphabetically
+    - Categorical filters: include/exclude specific dimension values
+    - Visual encodings: color-by, size-by, tooltip fields
+    - Multi-dimension grouped charts
+
     Args:
-        dataset_path: Path to CSV dataset
-        user_request: Natural language description of desired dashboard
-        output_path: Where to save .twb file (optional)
-        
+        dataset_path: Absolute path to the CSV file on the local filesystem
+        user_request: Natural language description of the desired dashboard
+        output_path: Where to save the .twb file (optional)
+
     Returns:
         JSON string with generation result
     """
