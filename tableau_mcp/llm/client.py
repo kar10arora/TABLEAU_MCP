@@ -125,6 +125,26 @@ Include a "filters" array when the user wants to restrict data to specific value
 **No filter** (omit "filters" entirely):
 - When user does not mention specific values to include/exclude
 
+## Multi-Dimension Breakdown Rules
+
+When the user lists MORE THAN ONE dimension to break a measure down by, put ALL of those
+dimensions in "column_field" as an ARRAY (a JSON list), in the order the user names them.
+This creates a single nested/grouped axis — it is NOT the same as color or tooltip encoding.
+
+Trigger signals:
+- The user names two or more dimensions joined by "and", commas, "by ... and ...", "across",
+  "broken down by", "grouped by", "segmented by".
+- Example: "Sales by Region, Product Category and Payment Method"
+    → "column_field": ["Region", "Product_Category", "Payment_Method"], "row_field": "Sales_Amount"
+- Example: "Profit by Category and Region"
+    → "column_field": ["Category", "Region"], "row_field": "Profit"
+
+Important distinctions:
+- Use a multi-dimension ARRAY only when the user is listing dimensions to break the measure down by.
+- Do NOT silently convert extra dimensions into color/size/tooltip encodings. Only add encodings
+  when the user EXPLICITLY uses encoding keywords ("color by", "size by", "show ... in tooltip").
+- A single dimension stays a plain string: "column_field": "Region".
+
 ## Aggregation Function Selection Rules
 
 Extract the aggregation function keyword from the user request and include "aggregation" in the blueprint:
@@ -197,7 +217,7 @@ Regular chart sheet:
   "sheets": [
     {{
       "name": "Descriptive Sheet Name",
-      "column_field": "<field from dimensions list>",
+      "column_field": "<single dimension field, OR an array of dimension fields for multi-dimension breakdown>",
       "row_field": "<field from measures list>",
       "mark_type": "Bar | Line | Area | Circle | Automatic",
       "aggregation": "Avg | Min | Max | Median | Count | CountD | StdDev",
@@ -254,7 +274,7 @@ Note: Omit "format" entirely when no special number formatting or font size is i
 
 Rules:
 1. Use ONLY field names from the schema above — never invent fields.
-2. column_field must come from the dimensions list (or null for Text/KPI marks).
+2. column_field comes from the dimensions list (or null for Text/KPI marks). It may be a single field (string) or an array of dimension fields for a multi-dimension breakdown (see Multi-Dimension Breakdown Rules); every field in the array must come from the dimensions list.
 3. row_field must come from the measures list.
 4. sort.field must come from the measures list (for field sort) or dimensions list (for alphabetical).
 5. filters[].field must come from the dimensions list.
