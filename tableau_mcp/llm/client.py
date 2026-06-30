@@ -85,6 +85,15 @@ Choose mark_type based on these signals in the user request:
   stacked trend, share over time, proportion over time,
   filled, contribution over time.
 
+**Text** (single summary KPI number, no axis):
+- Keywords: "KPI", "total", "grand total", "show me the total", "what is the total",
+  "display the sum", "summarize", "single number", "big number", "headline metric",
+  "scorecard", "how much total", "overall", "all-time", "in total"
+- Use when the user wants ONE prominent number, not a chart
+- Set column_field to null — no dimension axis needed
+- Always include aggregation (Sum, Avg, Count, etc.)
+- Optionally include format with number_format for currency/percentage
+
 **Automatic**: let Tableau decide (use only when intent is unclear).
 
 ## Sort Selection Rules
@@ -116,16 +125,82 @@ Include a "filters" array when the user wants to restrict data to specific value
 **No filter** (omit "filters" entirely):
 - When user does not mention specific values to include/exclude
 
+## Aggregation Function Selection Rules
+
+Extract the aggregation function keyword from the user request and include "aggregation" in the blueprint:
+
+Keyword Mapping:
+- "average", "avg", "mean", "typical" → "Avg"
+- "median", "mid", "midpoint", "middle value" → "Median"
+- "minimum", "min", "lowest", "least" → "Min"
+- "maximum", "max", "highest", "greatest", "most" → "Max"
+- "total", "sum", "combined", "altogether" → "Sum" (default)
+- "count", "number of", "how many" → "Count"
+- "distinct count", "unique count", "unique values" → "CountD"
+- "standard deviation", "std dev", "variation" → "StdDev"
+
+Default to "Sum" if no aggregation keyword is detected. Omit the "aggregation" key entirely when defaulting to Sum.
+
+Examples:
+- "Average sales by region" → {{"aggregation": "Avg", ...}}
+- "Minimum discount by category" → {{"aggregation": "Min", ...}}
+- "Count of transactions by month" → {{"aggregation": "Count", ...}}
+
+## Visual Encodings (Story 2.4)
+
+Include an "encodings" object to add color, size, and tooltip visual properties:
+
+**Color Encoding**:
+- Keywords: "color by", "colored by", "color-code", "color-coded"
+- Example: "sales by category, color by region" → encodings.color = {{"field": "region", "type": "dimension"}}
+- Use "type": "dimension" for categorical colors, "type": "measure" for gradient colors
+- Optional "palette": "tableau10" (default), "tableau20", or other Tableau palettes
+
+**Size Encoding**:
+- Keywords: "size by", "sized by", "bubble", "bubble chart", "size-encoded"
+- Example: "bubble chart with size by quantity" → encodings.size = {{"field": "quantity"}}
+- Typically used with Circle or Point mark types
+
+**Tooltip Encoding**:
+- Keywords: "show", "display", "tooltip", "hover", "on hover"
+- Example: "show sales and quantity in tooltip" → encodings.tooltip = ["sales", "quantity"]
+- Can be a single field or array of fields to include in hover display
+
+**No encoding** (omit "encodings" entirely):
+- When user does not request color, size, or tooltip modifications
+
+## KPI Number Formatting Rules
+
+When mark_type is "Text", include a "format" object with number_format:
+
+Number Format Patterns:
+- Currency (dollars): "$#,##0" → shows $1,234
+- Currency with cents: "$#,##0.00" → shows $1,234.56
+- Percentage: "0.00%" → shows 12.34%
+- Plain integer: "#,##0" → shows 1,234
+- Decimal: "#,##0.00" → shows 1,234.56
+
+Font sizes for KPIs:
+- "large", "big", "prominent", "headline" → font_size: 36
+- Default KPI font size → font_size: 24
+
+Keywords that trigger currency format: "revenue", "sales", "profit", "cost", "price", "$"
+Keywords that trigger percentage format: "rate", "ratio", "percentage", "%", "share"
+Omit "format" entirely when no special formatting is implied.
+
 ## Output Format
 
 Return ONLY valid JSON, no explanations:
+
+Regular chart sheet:
 {{
   "sheets": [
     {{
       "name": "Descriptive Sheet Name",
       "column_field": "<field from dimensions list>",
       "row_field": "<field from measures list>",
-      "mark_type": "Bar | Line | Area | Automatic",
+      "mark_type": "Bar | Line | Area | Circle | Automatic",
+      "aggregation": "Avg | Min | Max | Median | Count | CountD | StdDev",
       "sort": {{
         "field": "<measure field to sort by>",
         "direction": "DESC | ASC",
@@ -137,24 +212,62 @@ Return ONLY valid JSON, no explanations:
           "operator": "=",
           "values": ["<value1>", "<value2>"]
         }}
-      ]
+      ],
+      "encodings": {{
+        "color": {{
+          "field": "<dimension or measure field>",
+          "type": "dimension | measure",
+          "palette": "tableau10 | tableau20"
+        }},
+        "size": {{
+          "field": "<measure field>"
+        }},
+        "tooltip": ["<field1>", "<field2>"]
+      }}
+    }}
+  ]
+}}
+
+KPI / Text mark sheet (single summary number):
+{{
+  "sheets": [
+    {{
+      "name": "Total Sales KPI",
+      "column_field": null,
+      "row_field": "<field from measures list>",
+      "mark_type": "Text",
+      "aggregation": "Sum | Avg | Min | Max | Count",
+      "format": {{
+        "number_format": "$#,##0 | 0.00% | #,##0",
+        "font_size": 24
+      }}
     }}
   ]
 }}
 
 Note: Omit the "sort" key entirely when no sorting is requested.
 Note: Omit the "filters" key entirely when no filtering is requested.
+Note: Omit the "encodings" key entirely when no color/size/tooltip is requested.
+Note: Omit the "aggregation" key entirely when the default Sum aggregation applies.
+Note: For Text/KPI mark type, set column_field to null — the metric is a single number with no axis.
+Note: Omit "format" entirely when no special number formatting or font size is implied.
 
 Rules:
 1. Use ONLY field names from the schema above — never invent fields.
-2. column_field must come from the dimensions list.
+2. column_field must come from the dimensions list (or null for Text/KPI marks).
 3. row_field must come from the measures list.
 4. sort.field must come from the measures list (for field sort) or dimensions list (for alphabetical).
 5. filters[].field must come from the dimensions list.
 6. filters[].values must contain actual data values matching the field (use realistic values from sample_values if known).
-7. Create 1-3 sheets based on what the request asks for.
-8. When the request mentions a date/time dimension, prefer Line mark type.
-9. Return ONLY the JSON object — no markdown, no commentary.
+7. encodings.color.field can be from dimensions (categorical) or measures (gradient).
+8. encodings.size.field should be a measure (numeric field).
+9. encodings.tooltip fields can be from either dimensions or measures list.
+10. Create 1-3 sheets based on what the request asks for.
+11. When the request mentions a date/time dimension, prefer Line mark type.
+12. Circle/Point mark types work best with size encoding (bubble charts).
+13. Return ONLY the JSON object — no markdown, no commentary.
+14. For Text mark type (KPI): column_field must be null, aggregation is required, format is optional.
+15. number_format: "$#,##0" for currency, "0.00%" for percentage, "#,##0" for plain integers.
 
 Generate the blueprint now:"""
 

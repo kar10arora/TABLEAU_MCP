@@ -10,7 +10,7 @@ import tempfile
 # Add src to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src.core.xml_generator import TableauXMLCompiler
+from tableau_mcp.core.xml_generator import TableauXMLCompiler
 
 
 def test_xml_compiler_init():

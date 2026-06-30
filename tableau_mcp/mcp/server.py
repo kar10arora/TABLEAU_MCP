@@ -3,20 +3,28 @@ FastMCP server for Tableau workbook generation.
 """
 
 from fastmcp import FastMCP
-from src.core.schema_profiler import SchemaProfiler
-from src.core.xml_generator import TableauXMLCompiler
-from src.llm.client import LLMClient
+from tableau_mcp.core.schema_profiler import SchemaProfiler
+from tableau_mcp.core.xml_generator import TableauXMLCompiler
+from tableau_mcp.llm.client import LLMClient
 import os
 import json
+from tableau_mcp.paths import get_output_dir,get_template_path
 
 # Initialize FastMCP server
 mcp = FastMCP("tableau-mcp-server")
 
 # Initialize components
 schema_profiler = SchemaProfiler()
-llm_client = LLMClient()
+_llm_client = None
+TEMPLATE_PATH = get_template_path()
 
-TEMPLATE_PATH = os.getenv("TEMPLATE_DIR", "./templates") + "/base_template.twb"
+
+def _get_llm_client():
+    """Lazy-load LLM client only when needed."""
+    global _llm_client
+    if _llm_client is None:
+        _llm_client = LLMClient()
+    return _llm_client
 
 
 @mcp.tool()
@@ -59,11 +67,11 @@ def generate_tableau_workbook(
         schema = schema_profiler.profile_dataset(dataset_path)
         
         # Step 2: Generate blueprint with LLM
-        blueprint = llm_client.generate_blueprint(schema, user_request)
+        blueprint = _get_llm_client().generate_blueprint(schema, user_request)
         
         # Step 3: Compile workbook
         if output_path is None:
-            output_dir = os.getenv("OUTPUT_DIR", "./examples/generated_workbooks")
+            output_dir = get_output_dir(create=True)
             os.makedirs(output_dir, exist_ok=True)
             output_path = os.path.join(output_dir, "generated_workbook.twb")
         
@@ -85,6 +93,10 @@ def generate_tableau_workbook(
         })
 
 
-if __name__ == "__main__":
-    # Run the MCP server
+def main():
+    """Entry point for MCP server (used by PyInstaller and CLI)."""
     mcp.run()
+
+
+if __name__ == "__main__":
+    main()

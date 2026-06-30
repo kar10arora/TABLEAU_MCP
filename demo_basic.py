@@ -5,8 +5,8 @@ Uses a hardcoded blueprint to test the core pipeline.
 """
 
 import os
-from src.core.schema_profiler import SchemaProfiler
-from src.core.xml_generator import TableauXMLCompiler
+from tableau_mcp.core.schema_profiler import SchemaProfiler
+from tableau_mcp.core.xml_generator import TableauXMLCompiler
 
 def main():
     print("=" * 60)
@@ -46,7 +46,7 @@ def main():
     
     # Step 3: Generate workbook
     print("\n🔧 Step 3: Generating Tableau workbook...")
-    template_path = "templates/base_template.twb"
+    template_path = "tableau_mcp/templates/base_template.twb"
     output_dir = "examples/generated_workbooks"
     os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, "demo_basic.twb")

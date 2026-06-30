@@ -5,8 +5,8 @@ Outputs to examples/generated_workbooks/
 """
 
 import os
-from src.core.schema_profiler import SchemaProfiler
-from src.core.xml_generator import TableauXMLCompiler
+from tableau_mcp.core.schema_profiler import SchemaProfiler
+from tableau_mcp.core.xml_generator import TableauXMLCompiler
 
 DATASET   = "examples/sample_datasets/sales_sample.csv"
 TEMPLATE  = "templates/base_template.twb"
@@ -127,6 +127,61 @@ def main():
         print(f"✅  {out_23}  ({result['sheets_created']} sheets)")
     else:
         print(f"❌  Failed to generate story_2_3_filtering.twb")
+
+    print()
+    print("=" * 60)
+    print("Generating Story 2.4 – Visual Encodings")
+    print("=" * 60)
+
+    blueprint_24 = {
+        "sheets": [
+            {
+                "name": "Sales by Category, Color by Region",
+                "column_field": "category",
+                "row_field": "sales",
+                "mark_type": "Bar",
+                "encodings": {
+                    "color": {
+                        "field": "region",
+                        "type": "dimension",
+                        "palette": "tableau10"
+                    }
+                }
+            },
+            {
+                "name": "Bubble Chart - Sales vs Quantity",
+                "column_field": "region",
+                "row_field": "sales",
+                "mark_type": "Circle",
+                "encodings": {
+                    "size": {"field": "quantity"},
+                    "color": {"field": "category", "type": "dimension"},
+                    "tooltip": ["sales", "quantity", "region", "category"]
+                }
+            },
+            {
+                "name": "Sales by Product with Details",
+                "column_field": "product",
+                "row_field": "sales",
+                "mark_type": "Bar",
+                "encodings": {
+                    "tooltip": ["sales", "quantity", "profit", "region"]
+                }
+            },
+        ]
+    }
+
+    out_24 = os.path.join(OUT_DIR, "story_2_4_visual_encodings.twb")
+    result = compiler.compile_workbook(
+        blueprint=blueprint_24,
+        output_path=out_24,
+        dataset_path=DATASET,
+        schema=schema,
+    )
+    if result["success"]:
+        print(f"✅  {out_24}  ({result['sheets_created']} sheets)")
+    else:
+        print(f"❌  Failed to generate story_2_4_visual_encodings.twb")
 
     print()
     print("Open these files in Tableau Desktop to validate visually.")

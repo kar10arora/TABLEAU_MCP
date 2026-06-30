@@ -10,8 +10,17 @@ setup(
     description="Model Context Protocol server for automated Tableau workbook generation",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/tableau-mcp-server",
+    url="https://github.com/kar10arora/TABLEAU_MCP",
     packages=find_packages(),
+    include_package_data=True,
+    entry_points={
+        'console_scripts': [
+            'tableau-mcp=tableau_mcp.mcp.server:main',
+        ],
+    },
+    package_data={
+        'tableau_mcp': ['templates/*.twb'],
+    },
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",

@@ -1,0 +1,653 @@
+env) ) kartik.arora@ndi-mb-150 TABLEAU-MCP % >....                                                                                                                                 
+  --copy-metadata py-key-value-aio \
+  --collect-all fastmcp \
+  --collect-all mcp \
+  --collect-all starlette \
+  --collect-all key_value \
+  --hidden-import=pandas \
+  --hidden-import=lxml \
+  --hidden-import=google.generativeai \
+  --hidden-import=openai \
+  --hidden-import=dotenv \
+  --hidden-import=python_dotenv \
+  -p . \
+  tableau_mcp/__main__.py
+
+62 INFO: PyInstaller: 6.10.0, contrib hooks: 2026.6
+62 INFO: Python: 3.12.13
+77 INFO: Platform: macOS-26.5.1-x86_64-i386-64bit
+77 INFO: Python environment: /Users/kartik.arora/TABLEAU-MCP/venv
+78 INFO: wrote /Users/kartik.arora/TABLEAU-MCP/tableau-mcp.spec
+/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/utils/hooks/__init__.py:667: FastMCPDeprecationWarning: fastmcp.server.openapi is deprecated. Import from fastmcp.server.providers.openapi instead.
+  __import__(name)
+447 WARNING: Failed to collect submodules for 'key_value.aio.stores.windows_registry' because importing 'key_value.aio.stores.windows_registry' raised: ModuleNotFoundError: No module named 'winreg'
+7390 INFO: Module search paths (PYTHONPATH):
+['/usr/local/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python312.zip',
+ '/usr/local/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12',
+ '/usr/local/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/lib-dynload',
+ '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages',
+ '/Users/kartik.arora/TABLEAU-MCP/tableau_mcp',
+ '/Users/kartik.arora/TABLEAU-MCP']
+7661 INFO: Appending 'datas' from .spec
+7686 INFO: checking Analysis
+7686 INFO: Building Analysis because Analysis-00.toc is non existent
+7686 INFO: Running Analysis Analysis-00.toc
+7686 INFO: Target bytecode optimization level: 0
+7686 INFO: Initializing module dependency graph...
+7688 INFO: Caching module graph hooks...
+7709 INFO: Analyzing base_library.zip ...
+8569 INFO: Processing standard module hook 'hook-encodings.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks'
+10219 INFO: Processing standard module hook 'hook-pickle.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks'
+11341 INFO: Processing standard module hook 'hook-heapq.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks'
+11907 INFO: Caching module dependency graph...
+12034 INFO: Looking for Python shared library...
+12038 INFO: Using Python shared library: /usr/local/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/Python
+12039 INFO: Analyzing /Users/kartik.arora/TABLEAU-MCP/tableau_mcp/__main__.py
+12047 INFO: Processing standard module hook 'hook-fastmcp.py' from '/Users/kartik.arora/TABLEAU-MCP/hooks'
+/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/utils/hooks/__init__.py:667: FastMCPDeprecationWarning: fastmcp.server.openapi is deprecated. Import from fastmcp.server.providers.openapi instead.
+  __import__(name)
+/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/utils/hooks/__init__.py:667: FastMCPDeprecationWarning: fastmcp.server.openapi is deprecated. Import from fastmcp.server.providers.openapi instead.
+  __import__(name)
+338 WARNING: Failed to collect submodules for 'key_value.aio.stores.windows_registry' because importing 'key_value.aio.stores.windows_registry' raised: ModuleNotFoundError: No module named 'winreg'
+336 WARNING: Failed to collect submodules for 'key_value.aio.stores.windows_registry' because importing 'key_value.aio.stores.windows_registry' raised: ModuleNotFoundError: No module named 'winreg'
+24339 INFO: Processing pre-safe-import-module hook 'hook-platformdirs.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+24342 INFO: SetuptoolsInfo: initializing cached setuptools info...
+24826 INFO: Processing standard module hook 'hook-platformdirs.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+24964 INFO: Processing standard module hook 'hook-pydantic.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+25279 INFO: Processing pre-safe-import-module hook 'hook-typing_extensions.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+25523 INFO: Processing standard module hook 'hook-multiprocessing.util.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks'
+25679 INFO: Processing standard module hook 'hook-xml.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks'
+26354 INFO: Processing standard module hook 'hook-platform.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks'
+26603 INFO: Processing standard module hook 'hook-rich.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+27159 INFO: Processing standard module hook 'hook-pygments.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks'
+28746 INFO: Processing standard module hook 'hook-sysconfig.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks'
+29201 INFO: Processing standard module hook 'hook-zoneinfo.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+29776 INFO: Processing standard module hook 'hook-certifi.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+29800 INFO: Processing standard module hook 'hook-anyio.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+31360 INFO: Processing standard module hook 'hook-difflib.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks'
+31668 INFO: Processing standard module hook 'hook-dns.rdata.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+33348 INFO: Processing standard module hook 'hook-cryptography.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+33990 INFO: hook-cryptography: cryptography uses dynamically-linked OpenSSL: '/usr/local/opt/openssl@3/lib/libssl.3.dylib'
+34782 INFO: Processing standard module hook 'hook-urllib3.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+35280 INFO: Processing standard module hook 'hook-charset_normalizer.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+35578 INFO: Processing standard module hook 'hook-pycparser.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+35731 INFO: Processing standard module hook 'hook-setuptools.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks'
+35749 INFO: Processing pre-safe-import-module hook 'hook-distutils.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+35783 INFO: Processing pre-safe-import-module hook 'hook-jaraco.functools.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+35795 INFO: Processing pre-safe-import-module hook 'hook-more_itertools.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+36042 INFO: Processing pre-safe-import-module hook 'hook-packaging.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+36056 INFO: Processing standard module hook 'hook-packaging.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks'
+36246 INFO: Processing pre-safe-import-module hook 'hook-jaraco.text.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+36247 INFO: Setuptools: 'jaraco.text' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.jaraco.text'!
+36260 INFO: Processing pre-safe-import-module hook 'hook-importlib_resources.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+36262 INFO: Processing pre-safe-import-module hook 'hook-jaraco.context.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+36355 INFO: Processing pre-safe-import-module hook 'hook-importlib_metadata.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+36356 INFO: Setuptools: 'importlib_metadata' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.importlib_metadata'!
+36408 INFO: Processing pre-safe-import-module hook 'hook-zipp.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+36409 INFO: Setuptools: 'zipp' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.zipp'!
+36616 INFO: Processing pre-safe-import-module hook 'hook-tomli.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+36616 INFO: Setuptools: 'tomli' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.tomli'!
+37108 INFO: Processing pre-safe-import-module hook 'hook-wheel.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+37108 INFO: Setuptools: 'wheel' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.wheel'!
+38465 INFO: Processing standard module hook 'hook-numpy.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/numpy/_pyinstaller'
+41125 INFO: Processing standard module hook 'hook-uvicorn.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+41716 INFO: Processing standard module hook 'hook-websockets.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+42637 INFO: Processing standard module hook 'hook-opentelemetry.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+42953 INFO: Processing standard module hook 'hook-pandas.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks'
+45772 INFO: Processing standard module hook 'hook-pandas.io.formats.style.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks'
+48882 INFO: Processing standard module hook 'hook-pandas.plotting.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks'
+49075 INFO: Processing standard module hook 'hook-dateutil.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+49223 INFO: Processing pre-safe-import-module hook 'hook-six.moves.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+49950 INFO: Processing standard module hook 'hook-sqlite3.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks'
+50184 INFO: Processing standard module hook 'hook-pandas.io.clipboard.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks'
+50368 INFO: Processing standard module hook 'hook-xml.etree.cElementTree.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks'
+50372 INFO: Processing standard module hook 'hook-lxml.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+50617 INFO: Processing standard module hook 'hook-lxml.etree.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+50631 INFO: Processing standard module hook 'hook-xml.dom.domreg.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks'
+51024 INFO: Processing standard module hook 'hook-pytest.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+51353 INFO: Processing standard module hook 'hook-py.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+52605 INFO: Processing standard module hook 'hook-google.api_core.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+53181 INFO: Processing standard module hook 'hook-grpc.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+55145 INFO: Processing standard module hook 'hook-httplib2.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+55661 INFO: Processing standard module hook 'hook-googleapiclient.model.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+62585 INFO: Analyzing hidden import 'python_dotenv'
+62585 ERROR: Hidden import 'python_dotenv' not found
+62585 INFO: Analyzing hidden import 'fastmcp.apps.approval'
+62589 INFO: Analyzing hidden import 'fastmcp.apps.choice'
+62594 INFO: Analyzing hidden import 'fastmcp.apps.file_upload'
+62605 INFO: Analyzing hidden import 'fastmcp.apps.form'
+62612 INFO: Analyzing hidden import 'fastmcp.apps.generative'
+62619 INFO: Analyzing hidden import 'fastmcp.cli'
+64188 INFO: Analyzing hidden import 'fastmcp.cli.__main__'
+64189 INFO: Analyzing hidden import 'fastmcp.client.sampling.handlers'
+64190 INFO: Analyzing hidden import 'fastmcp.client.sampling.handlers.anthropic'
+64202 INFO: Analyzing hidden import 'fastmcp.client.sampling.handlers.google_genai'
+64212 INFO: Analyzing hidden import 'fastmcp.client.sampling.handlers.openai'
+64302 INFO: Analyzing hidden import 'fastmcp.dependencies'
+64305 INFO: Analyzing hidden import 'fastmcp.experimental'
+64306 INFO: Analyzing hidden import 'fastmcp.experimental.sampling'
+64307 INFO: Analyzing hidden import 'fastmcp.experimental.sampling.handlers'
+64308 INFO: Analyzing hidden import 'fastmcp.experimental.sampling.handlers.openai'
+64309 INFO: Analyzing hidden import 'fastmcp.experimental.transforms'
+64310 INFO: Analyzing hidden import 'fastmcp.experimental.transforms.code_mode'
+64364 INFO: Analyzing hidden import 'fastmcp.server.app'
+64365 INFO: Analyzing hidden import 'fastmcp.server.apps'
+64367 INFO: Analyzing hidden import 'fastmcp.server.auth.providers.auth0'
+64369 INFO: Analyzing hidden import 'fastmcp.server.auth.providers.aws'
+64374 INFO: Analyzing hidden import 'fastmcp.server.auth.providers.azure'
+64390 INFO: Analyzing hidden import 'fastmcp.server.auth.providers.clerk'
+64400 INFO: Analyzing hidden import 'fastmcp.server.auth.providers.descope'
+64406 INFO: Analyzing hidden import 'fastmcp.server.auth.providers.discord'
+64413 INFO: Analyzing hidden import 'fastmcp.server.auth.providers.github'
+64426 INFO: Analyzing hidden import 'fastmcp.server.auth.providers.google'
+64435 INFO: Analyzing hidden import 'fastmcp.server.auth.providers.in_memory'
+64445 INFO: Analyzing hidden import 'fastmcp.server.auth.providers.introspection'
+64453 INFO: Analyzing hidden import 'fastmcp.server.auth.providers.keycloak'
+64456 INFO: Analyzing hidden import 'fastmcp.server.auth.providers.oci'
+64460 INFO: Analyzing hidden import 'fastmcp.server.auth.providers.propelauth'
+64466 INFO: Analyzing hidden import 'fastmcp.server.auth.providers.scalekit'
+64471 INFO: Analyzing hidden import 'fastmcp.server.auth.providers.supabase'
+64476 INFO: Analyzing hidden import 'fastmcp.server.auth.providers.workos'
+64487 INFO: Analyzing hidden import 'fastmcp.server.middleware.caching'
+64522 INFO: Analyzing hidden import 'fastmcp.server.middleware.error_handling'
+64529 INFO: Analyzing hidden import 'fastmcp.server.middleware.logging'
+64538 INFO: Analyzing hidden import 'fastmcp.server.middleware.rate_limiting'
+64546 INFO: Analyzing hidden import 'fastmcp.server.middleware.response_limiting'
+64550 INFO: Analyzing hidden import 'fastmcp.server.middleware.timing'
+64556 INFO: Analyzing hidden import 'fastmcp.server.middleware.tool_injection'
+64562 INFO: Analyzing hidden import 'fastmcp.server.openapi'
+64567 INFO: Analyzing hidden import 'fastmcp.server.openapi.components'
+64568 INFO: Analyzing hidden import 'fastmcp.server.openapi.routing'
+64570 INFO: Analyzing hidden import 'fastmcp.server.proxy'
+64571 INFO: Analyzing hidden import 'fastmcp.types'
+64573 INFO: Analyzing hidden import 'fastmcp.utilities.lifespan'
+64575 INFO: Analyzing hidden import 'fastmcp.utilities.skills'
+64581 INFO: Analyzing hidden import 'fastmcp.utilities.tests'
+64589 INFO: Analyzing hidden import 'mcp.cli'
+64589 ERROR: Hidden import 'mcp.cli' not found
+64590 INFO: Analyzing hidden import 'mcp.cli.claude'
+64590 ERROR: Hidden import 'mcp.cli.claude' not found
+64590 INFO: Analyzing hidden import 'mcp.cli.cli'
+64590 ERROR: Hidden import 'mcp.cli.cli' not found
+64590 INFO: Analyzing hidden import 'mcp.client'
+64590 ERROR: Hidden import 'mcp.client' not found
+64590 INFO: Analyzing hidden import 'mcp.client.__main__'
+64590 ERROR: Hidden import 'mcp.client.__main__' not found
+64590 INFO: Analyzing hidden import 'mcp.client.auth'
+64590 ERROR: Hidden import 'mcp.client.auth' not found
+64590 INFO: Analyzing hidden import 'mcp.client.auth.exceptions'
+64590 ERROR: Hidden import 'mcp.client.auth.exceptions' not found
+64590 INFO: Analyzing hidden import 'mcp.client.auth.extensions'
+64590 ERROR: Hidden import 'mcp.client.auth.extensions' not found
+64590 INFO: Analyzing hidden import 'mcp.client.auth.extensions.client_credentials'
+64590 ERROR: Hidden import 'mcp.client.auth.extensions.client_credentials' not found
+64590 INFO: Analyzing hidden import 'mcp.client.auth.oauth2'
+64590 ERROR: Hidden import 'mcp.client.auth.oauth2' not found
+64590 INFO: Analyzing hidden import 'mcp.client.auth.utils'
+64591 ERROR: Hidden import 'mcp.client.auth.utils' not found
+64591 INFO: Analyzing hidden import 'mcp.client.experimental'
+64591 ERROR: Hidden import 'mcp.client.experimental' not found
+64591 INFO: Analyzing hidden import 'mcp.client.experimental.task_handlers'
+64591 ERROR: Hidden import 'mcp.client.experimental.task_handlers' not found
+64591 INFO: Analyzing hidden import 'mcp.client.experimental.tasks'
+64591 ERROR: Hidden import 'mcp.client.experimental.tasks' not found
+64591 INFO: Analyzing hidden import 'mcp.client.session'
+64591 ERROR: Hidden import 'mcp.client.session' not found
+64591 INFO: Analyzing hidden import 'mcp.client.session_group'
+64591 ERROR: Hidden import 'mcp.client.session_group' not found
+64591 INFO: Analyzing hidden import 'mcp.client.sse'
+64591 ERROR: Hidden import 'mcp.client.sse' not found
+64591 INFO: Analyzing hidden import 'mcp.client.stdio'
+64592 ERROR: Hidden import 'mcp.client.stdio' not found
+64592 INFO: Analyzing hidden import 'mcp.client.streamable_http'
+64592 ERROR: Hidden import 'mcp.client.streamable_http' not found
+64592 INFO: Analyzing hidden import 'mcp.client.websocket'
+64592 ERROR: Hidden import 'mcp.client.websocket' not found
+64592 INFO: Analyzing hidden import 'mcp.os'
+64592 ERROR: Hidden import 'mcp.os' not found
+64592 INFO: Analyzing hidden import 'mcp.os.posix'
+64592 ERROR: Hidden import 'mcp.os.posix' not found
+64592 INFO: Analyzing hidden import 'mcp.os.posix.utilities'
+64592 ERROR: Hidden import 'mcp.os.posix.utilities' not found
+64592 INFO: Analyzing hidden import 'mcp.os.win32'
+64592 ERROR: Hidden import 'mcp.os.win32' not found
+64592 INFO: Analyzing hidden import 'mcp.os.win32.utilities'
+64592 ERROR: Hidden import 'mcp.os.win32.utilities' not found
+64592 INFO: Analyzing hidden import 'mcp.server.__main__'
+64592 ERROR: Hidden import 'mcp.server.__main__' not found
+64592 INFO: Analyzing hidden import 'mcp.server.auth'
+64593 ERROR: Hidden import 'mcp.server.auth' not found
+64593 INFO: Analyzing hidden import 'mcp.server.auth.errors'
+64593 ERROR: Hidden import 'mcp.server.auth.errors' not found
+64593 INFO: Analyzing hidden import 'mcp.server.auth.handlers'
+64593 ERROR: Hidden import 'mcp.server.auth.handlers' not found
+64593 INFO: Analyzing hidden import 'mcp.server.auth.handlers.authorize'
+64593 ERROR: Hidden import 'mcp.server.auth.handlers.authorize' not found
+64593 INFO: Analyzing hidden import 'mcp.server.auth.handlers.metadata'
+64593 ERROR: Hidden import 'mcp.server.auth.handlers.metadata' not found
+64593 INFO: Analyzing hidden import 'mcp.server.auth.handlers.register'
+64593 ERROR: Hidden import 'mcp.server.auth.handlers.register' not found
+64593 INFO: Analyzing hidden import 'mcp.server.auth.handlers.revoke'
+64593 ERROR: Hidden import 'mcp.server.auth.handlers.revoke' not found
+64593 INFO: Analyzing hidden import 'mcp.server.auth.handlers.token'
+64593 ERROR: Hidden import 'mcp.server.auth.handlers.token' not found
+64593 INFO: Analyzing hidden import 'mcp.server.auth.json_response'
+64593 ERROR: Hidden import 'mcp.server.auth.json_response' not found
+64593 INFO: Analyzing hidden import 'mcp.server.auth.middleware'
+64593 ERROR: Hidden import 'mcp.server.auth.middleware' not found
+64593 INFO: Analyzing hidden import 'mcp.server.auth.middleware.auth_context'
+64593 ERROR: Hidden import 'mcp.server.auth.middleware.auth_context' not found
+64593 INFO: Analyzing hidden import 'mcp.server.auth.middleware.bearer_auth'
+64593 ERROR: Hidden import 'mcp.server.auth.middleware.bearer_auth' not found
+64593 INFO: Analyzing hidden import 'mcp.server.auth.middleware.client_auth'
+64593 ERROR: Hidden import 'mcp.server.auth.middleware.client_auth' not found
+64594 INFO: Analyzing hidden import 'mcp.server.auth.provider'
+64594 ERROR: Hidden import 'mcp.server.auth.provider' not found
+64594 INFO: Analyzing hidden import 'mcp.server.auth.routes'
+64594 ERROR: Hidden import 'mcp.server.auth.routes' not found
+64594 INFO: Analyzing hidden import 'mcp.server.auth.settings'
+64594 ERROR: Hidden import 'mcp.server.auth.settings' not found
+64594 INFO: Analyzing hidden import 'mcp.server.elicitation'
+64594 ERROR: Hidden import 'mcp.server.elicitation' not found
+64594 INFO: Analyzing hidden import 'mcp.server.experimental'
+64594 ERROR: Hidden import 'mcp.server.experimental' not found
+64594 INFO: Analyzing hidden import 'mcp.server.experimental.request_context'
+64594 ERROR: Hidden import 'mcp.server.experimental.request_context' not found
+64594 INFO: Analyzing hidden import 'mcp.server.experimental.session_features'
+64594 ERROR: Hidden import 'mcp.server.experimental.session_features' not found
+64594 INFO: Analyzing hidden import 'mcp.server.experimental.task_context'
+64594 ERROR: Hidden import 'mcp.server.experimental.task_context' not found
+64594 INFO: Analyzing hidden import 'mcp.server.experimental.task_result_handler'
+64594 ERROR: Hidden import 'mcp.server.experimental.task_result_handler' not found
+64594 INFO: Analyzing hidden import 'mcp.server.experimental.task_scope'
+64594 ERROR: Hidden import 'mcp.server.experimental.task_scope' not found
+64594 INFO: Analyzing hidden import 'mcp.server.experimental.task_support'
+64594 ERROR: Hidden import 'mcp.server.experimental.task_support' not found
+64594 INFO: Analyzing hidden import 'mcp.server.fastmcp'
+64594 ERROR: Hidden import 'mcp.server.fastmcp' not found
+64594 INFO: Analyzing hidden import 'mcp.server.fastmcp.exceptions'
+64595 ERROR: Hidden import 'mcp.server.fastmcp.exceptions' not found
+64595 INFO: Analyzing hidden import 'mcp.server.fastmcp.prompts'
+64595 ERROR: Hidden import 'mcp.server.fastmcp.prompts' not found
+64595 INFO: Analyzing hidden import 'mcp.server.fastmcp.prompts.base'
+64595 ERROR: Hidden import 'mcp.server.fastmcp.prompts.base' not found
+64595 INFO: Analyzing hidden import 'mcp.server.fastmcp.prompts.manager'
+64595 ERROR: Hidden import 'mcp.server.fastmcp.prompts.manager' not found
+64595 INFO: Analyzing hidden import 'mcp.server.fastmcp.resources'
+64595 ERROR: Hidden import 'mcp.server.fastmcp.resources' not found
+64595 INFO: Analyzing hidden import 'mcp.server.fastmcp.resources.base'
+64595 ERROR: Hidden import 'mcp.server.fastmcp.resources.base' not found
+64595 INFO: Analyzing hidden import 'mcp.server.fastmcp.resources.resource_manager'
+64595 ERROR: Hidden import 'mcp.server.fastmcp.resources.resource_manager' not found
+64595 INFO: Analyzing hidden import 'mcp.server.fastmcp.resources.templates'
+64595 ERROR: Hidden import 'mcp.server.fastmcp.resources.templates' not found
+64595 INFO: Analyzing hidden import 'mcp.server.fastmcp.resources.types'
+64595 ERROR: Hidden import 'mcp.server.fastmcp.resources.types' not found
+64595 INFO: Analyzing hidden import 'mcp.server.fastmcp.server'
+64595 ERROR: Hidden import 'mcp.server.fastmcp.server' not found
+64595 INFO: Analyzing hidden import 'mcp.server.fastmcp.tools'
+64595 ERROR: Hidden import 'mcp.server.fastmcp.tools' not found
+64595 INFO: Analyzing hidden import 'mcp.server.fastmcp.tools.base'
+64595 ERROR: Hidden import 'mcp.server.fastmcp.tools.base' not found
+64595 INFO: Analyzing hidden import 'mcp.server.fastmcp.tools.tool_manager'
+64595 ERROR: Hidden import 'mcp.server.fastmcp.tools.tool_manager' not found
+64595 INFO: Analyzing hidden import 'mcp.server.fastmcp.utilities'
+64596 ERROR: Hidden import 'mcp.server.fastmcp.utilities' not found
+64596 INFO: Analyzing hidden import 'mcp.server.fastmcp.utilities.context_injection'
+64596 ERROR: Hidden import 'mcp.server.fastmcp.utilities.context_injection' not found
+64596 INFO: Analyzing hidden import 'mcp.server.fastmcp.utilities.func_metadata'
+64596 ERROR: Hidden import 'mcp.server.fastmcp.utilities.func_metadata' not found
+64596 INFO: Analyzing hidden import 'mcp.server.fastmcp.utilities.logging'
+64596 ERROR: Hidden import 'mcp.server.fastmcp.utilities.logging' not found
+64596 INFO: Analyzing hidden import 'mcp.server.fastmcp.utilities.types'
+64596 ERROR: Hidden import 'mcp.server.fastmcp.utilities.types' not found
+64596 INFO: Analyzing hidden import 'mcp.server.lowlevel'
+64596 ERROR: Hidden import 'mcp.server.lowlevel' not found
+64596 INFO: Analyzing hidden import 'mcp.server.lowlevel.experimental'
+64596 ERROR: Hidden import 'mcp.server.lowlevel.experimental' not found
+64596 INFO: Analyzing hidden import 'mcp.server.lowlevel.func_inspection'
+64596 ERROR: Hidden import 'mcp.server.lowlevel.func_inspection' not found
+64596 INFO: Analyzing hidden import 'mcp.server.lowlevel.helper_types'
+64596 ERROR: Hidden import 'mcp.server.lowlevel.helper_types' not found
+64596 INFO: Analyzing hidden import 'mcp.server.lowlevel.server'
+64596 ERROR: Hidden import 'mcp.server.lowlevel.server' not found
+64596 INFO: Analyzing hidden import 'mcp.server.models'
+64596 ERROR: Hidden import 'mcp.server.models' not found
+64596 INFO: Analyzing hidden import 'mcp.server.session'
+64596 ERROR: Hidden import 'mcp.server.session' not found
+64596 INFO: Analyzing hidden import 'mcp.server.sse'
+64596 ERROR: Hidden import 'mcp.server.sse' not found
+64597 INFO: Analyzing hidden import 'mcp.server.stdio'
+64597 ERROR: Hidden import 'mcp.server.stdio' not found
+64597 INFO: Analyzing hidden import 'mcp.server.streamable_http'
+64597 ERROR: Hidden import 'mcp.server.streamable_http' not found
+64597 INFO: Analyzing hidden import 'mcp.server.streamable_http_manager'
+64597 ERROR: Hidden import 'mcp.server.streamable_http_manager' not found
+64597 INFO: Analyzing hidden import 'mcp.server.transport_security'
+64597 ERROR: Hidden import 'mcp.server.transport_security' not found
+64597 INFO: Analyzing hidden import 'mcp.server.validation'
+64597 ERROR: Hidden import 'mcp.server.validation' not found
+64597 INFO: Analyzing hidden import 'mcp.server.websocket'
+64597 ERROR: Hidden import 'mcp.server.websocket' not found
+64597 INFO: Analyzing hidden import 'mcp.shared'
+64597 ERROR: Hidden import 'mcp.shared' not found
+64597 INFO: Analyzing hidden import 'mcp.shared._httpx_utils'
+64597 ERROR: Hidden import 'mcp.shared._httpx_utils' not found
+64597 INFO: Analyzing hidden import 'mcp.shared.auth'
+64597 ERROR: Hidden import 'mcp.shared.auth' not found
+64597 INFO: Analyzing hidden import 'mcp.shared.auth_utils'
+64597 ERROR: Hidden import 'mcp.shared.auth_utils' not found
+64597 INFO: Analyzing hidden import 'mcp.shared.context'
+64597 ERROR: Hidden import 'mcp.shared.context' not found
+64598 INFO: Analyzing hidden import 'mcp.shared.exceptions'
+64598 ERROR: Hidden import 'mcp.shared.exceptions' not found
+64598 INFO: Analyzing hidden import 'mcp.shared.experimental'
+64598 ERROR: Hidden import 'mcp.shared.experimental' not found
+64598 INFO: Analyzing hidden import 'mcp.shared.experimental.tasks'
+64598 ERROR: Hidden import 'mcp.shared.experimental.tasks' not found
+64598 INFO: Analyzing hidden import 'mcp.shared.experimental.tasks.capabilities'
+64598 ERROR: Hidden import 'mcp.shared.experimental.tasks.capabilities' not found
+64598 INFO: Analyzing hidden import 'mcp.shared.experimental.tasks.context'
+64598 ERROR: Hidden import 'mcp.shared.experimental.tasks.context' not found
+64598 INFO: Analyzing hidden import 'mcp.shared.experimental.tasks.helpers'
+64598 ERROR: Hidden import 'mcp.shared.experimental.tasks.helpers' not found
+64598 INFO: Analyzing hidden import 'mcp.shared.experimental.tasks.in_memory_task_store'
+64598 ERROR: Hidden import 'mcp.shared.experimental.tasks.in_memory_task_store' not found
+64598 INFO: Analyzing hidden import 'mcp.shared.experimental.tasks.message_queue'
+64598 ERROR: Hidden import 'mcp.shared.experimental.tasks.message_queue' not found
+64598 INFO: Analyzing hidden import 'mcp.shared.experimental.tasks.polling'
+64598 ERROR: Hidden import 'mcp.shared.experimental.tasks.polling' not found
+64598 INFO: Analyzing hidden import 'mcp.shared.experimental.tasks.resolver'
+64598 ERROR: Hidden import 'mcp.shared.experimental.tasks.resolver' not found
+64598 INFO: Analyzing hidden import 'mcp.shared.experimental.tasks.store'
+64599 ERROR: Hidden import 'mcp.shared.experimental.tasks.store' not found
+64599 INFO: Analyzing hidden import 'mcp.shared.memory'
+64599 ERROR: Hidden import 'mcp.shared.memory' not found
+64599 INFO: Analyzing hidden import 'mcp.shared.message'
+64599 ERROR: Hidden import 'mcp.shared.message' not found
+64599 INFO: Analyzing hidden import 'mcp.shared.metadata_utils'
+64599 ERROR: Hidden import 'mcp.shared.metadata_utils' not found
+64599 INFO: Analyzing hidden import 'mcp.shared.progress'
+64599 ERROR: Hidden import 'mcp.shared.progress' not found
+64599 INFO: Analyzing hidden import 'mcp.shared.response_router'
+64599 ERROR: Hidden import 'mcp.shared.response_router' not found
+64599 INFO: Analyzing hidden import 'mcp.shared.session'
+64599 ERROR: Hidden import 'mcp.shared.session' not found
+64599 INFO: Analyzing hidden import 'mcp.shared.tool_name_validation'
+64599 ERROR: Hidden import 'mcp.shared.tool_name_validation' not found
+64599 INFO: Analyzing hidden import 'mcp.shared.version'
+64599 ERROR: Hidden import 'mcp.shared.version' not found
+64599 INFO: Analyzing hidden import 'mcp.types'
+64599 ERROR: Hidden import 'mcp.types' not found
+64599 INFO: Analyzing hidden import 'starlette.config'
+64606 INFO: Analyzing hidden import 'starlette.endpoints'
+64618 INFO: Analyzing hidden import 'starlette.middleware.base'
+64629 INFO: Analyzing hidden import 'starlette.middleware.cors'
+64637 INFO: Analyzing hidden import 'starlette.middleware.gzip'
+64645 INFO: Analyzing hidden import 'starlette.middleware.httpsredirect'
+64647 INFO: Analyzing hidden import 'starlette.middleware.trustedhost'
+64651 INFO: Analyzing hidden import 'starlette.middleware.wsgi'
+64659 INFO: Analyzing hidden import 'starlette.schemas'
+64665 INFO: Analyzing hidden import 'starlette.staticfiles'
+64675 INFO: Analyzing hidden import 'starlette.templating'
+64681 INFO: Analyzing hidden import 'starlette.testclient'
+64710 INFO: Analyzing hidden import 'key_value.aio._utils.compound'
+64715 INFO: Analyzing hidden import 'key_value.aio._utils.retry'
+64717 INFO: Analyzing hidden import 'key_value.aio._utils.wait'
+64719 INFO: Analyzing hidden import 'key_value.aio.adapters.base'
+64720 INFO: Analyzing hidden import 'key_value.aio.stores.keyring'
+64726 INFO: Processing standard module hook 'hook-keyring.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks'
+65181 INFO: Analyzing hidden import 'key_value.aio.stores.null'
+65183 INFO: Analyzing hidden import 'key_value.aio.stores.simple'
+65188 INFO: Analyzing hidden import 'key_value.aio.wrappers.compression'
+65195 INFO: Analyzing hidden import 'key_value.aio.wrappers.default_value'
+65201 INFO: Analyzing hidden import 'key_value.aio.wrappers.fallback'
+65208 INFO: Analyzing hidden import 'key_value.aio.wrappers.logging'
+65219 INFO: Analyzing hidden import 'key_value.aio.wrappers.passthrough_cache'
+65232 INFO: Analyzing hidden import 'key_value.aio.wrappers.prefix_collections'
+65238 INFO: Analyzing hidden import 'key_value.aio.wrappers.prefix_keys'
+65245 INFO: Analyzing hidden import 'key_value.aio.wrappers.read_only'
+65251 INFO: Analyzing hidden import 'key_value.aio.wrappers.retry'
+65258 INFO: Analyzing hidden import 'key_value.aio.wrappers.routing'
+65266 INFO: Analyzing hidden import 'key_value.aio.wrappers.single_collection'
+65273 INFO: Analyzing hidden import 'key_value.aio.wrappers.timeout'
+65279 INFO: Processing module hooks (post-graph stage)...
+65306 WARNING: Hidden import "mcp.cli" not found!
+65306 WARNING: Hidden import "mcp.cli.claude" not found!
+65306 WARNING: Hidden import "mcp.cli.cli" not found!
+65306 WARNING: Hidden import "mcp.client" not found!
+65306 WARNING: Hidden import "mcp.client.__main__" not found!
+65307 WARNING: Hidden import "mcp.client.auth" not found!
+65307 WARNING: Hidden import "mcp.client.auth.exceptions" not found!
+65307 WARNING: Hidden import "mcp.client.auth.extensions" not found!
+65307 WARNING: Hidden import "mcp.client.auth.extensions.client_credentials" not found!
+65307 WARNING: Hidden import "mcp.client.auth.oauth2" not found!
+65307 WARNING: Hidden import "mcp.client.auth.utils" not found!
+65307 WARNING: Hidden import "mcp.client.experimental" not found!
+65307 WARNING: Hidden import "mcp.client.experimental.task_handlers" not found!
+65307 WARNING: Hidden import "mcp.client.experimental.tasks" not found!
+65307 WARNING: Hidden import "mcp.client.session" not found!
+65307 WARNING: Hidden import "mcp.client.session_group" not found!
+65307 WARNING: Hidden import "mcp.client.sse" not found!
+65307 WARNING: Hidden import "mcp.client.stdio" not found!
+65307 WARNING: Hidden import "mcp.client.streamable_http" not found!
+65307 WARNING: Hidden import "mcp.client.websocket" not found!
+65307 WARNING: Hidden import "mcp.os" not found!
+65308 WARNING: Hidden import "mcp.os.posix" not found!
+65308 WARNING: Hidden import "mcp.os.posix.utilities" not found!
+65308 WARNING: Hidden import "mcp.os.win32" not found!
+65308 WARNING: Hidden import "mcp.os.win32.utilities" not found!
+65308 WARNING: Hidden import "mcp.server.__main__" not found!
+65308 WARNING: Hidden import "mcp.server.auth" not found!
+65308 WARNING: Hidden import "mcp.server.auth.errors" not found!
+65308 WARNING: Hidden import "mcp.server.auth.handlers" not found!
+65308 WARNING: Hidden import "mcp.server.auth.handlers.authorize" not found!
+65308 WARNING: Hidden import "mcp.server.auth.handlers.metadata" not found!
+65308 WARNING: Hidden import "mcp.server.auth.handlers.register" not found!
+65308 WARNING: Hidden import "mcp.server.auth.handlers.revoke" not found!
+65308 WARNING: Hidden import "mcp.server.auth.handlers.token" not found!
+65308 WARNING: Hidden import "mcp.server.auth.json_response" not found!
+65309 WARNING: Hidden import "mcp.server.auth.middleware" not found!
+65309 WARNING: Hidden import "mcp.server.auth.middleware.auth_context" not found!
+65309 WARNING: Hidden import "mcp.server.auth.middleware.bearer_auth" not found!
+65309 WARNING: Hidden import "mcp.server.auth.middleware.client_auth" not found!
+65309 WARNING: Hidden import "mcp.server.auth.provider" not found!
+65309 WARNING: Hidden import "mcp.server.auth.routes" not found!
+65309 WARNING: Hidden import "mcp.server.auth.settings" not found!
+65309 WARNING: Hidden import "mcp.server.elicitation" not found!
+65309 WARNING: Hidden import "mcp.server.experimental" not found!
+65309 WARNING: Hidden import "mcp.server.experimental.request_context" not found!
+65309 WARNING: Hidden import "mcp.server.experimental.session_features" not found!
+65309 WARNING: Hidden import "mcp.server.experimental.task_context" not found!
+65309 WARNING: Hidden import "mcp.server.experimental.task_result_handler" not found!
+65309 WARNING: Hidden import "mcp.server.experimental.task_scope" not found!
+65309 WARNING: Hidden import "mcp.server.experimental.task_support" not found!
+65310 WARNING: Hidden import "mcp.server.fastmcp" not found!
+65310 WARNING: Hidden import "mcp.server.fastmcp.exceptions" not found!
+65310 WARNING: Hidden import "mcp.server.fastmcp.prompts" not found!
+65310 WARNING: Hidden import "mcp.server.fastmcp.prompts.base" not found!
+65310 WARNING: Hidden import "mcp.server.fastmcp.prompts.manager" not found!
+65310 WARNING: Hidden import "mcp.server.fastmcp.resources" not found!
+65310 WARNING: Hidden import "mcp.server.fastmcp.resources.base" not found!
+65310 WARNING: Hidden import "mcp.server.fastmcp.resources.resource_manager" not found!
+65310 WARNING: Hidden import "mcp.server.fastmcp.resources.templates" not found!
+65310 WARNING: Hidden import "mcp.server.fastmcp.resources.types" not found!
+65310 WARNING: Hidden import "mcp.server.fastmcp.server" not found!
+65310 WARNING: Hidden import "mcp.server.fastmcp.tools" not found!
+65310 WARNING: Hidden import "mcp.server.fastmcp.tools.base" not found!
+65310 WARNING: Hidden import "mcp.server.fastmcp.tools.tool_manager" not found!
+65310 WARNING: Hidden import "mcp.server.fastmcp.utilities" not found!
+65310 WARNING: Hidden import "mcp.server.fastmcp.utilities.context_injection" not found!
+65310 WARNING: Hidden import "mcp.server.fastmcp.utilities.func_metadata" not found!
+65310 WARNING: Hidden import "mcp.server.fastmcp.utilities.logging" not found!
+65310 WARNING: Hidden import "mcp.server.fastmcp.utilities.types" not found!
+65311 WARNING: Hidden import "mcp.server.lowlevel" not found!
+65311 WARNING: Hidden import "mcp.server.lowlevel.experimental" not found!
+65311 WARNING: Hidden import "mcp.server.lowlevel.func_inspection" not found!
+65311 WARNING: Hidden import "mcp.server.lowlevel.helper_types" not found!
+65311 WARNING: Hidden import "mcp.server.lowlevel.server" not found!
+65311 WARNING: Hidden import "mcp.server.models" not found!
+65311 WARNING: Hidden import "mcp.server.session" not found!
+65311 WARNING: Hidden import "mcp.server.sse" not found!
+65311 WARNING: Hidden import "mcp.server.stdio" not found!
+65311 WARNING: Hidden import "mcp.server.streamable_http" not found!
+65311 WARNING: Hidden import "mcp.server.streamable_http_manager" not found!
+65311 WARNING: Hidden import "mcp.server.transport_security" not found!
+65311 WARNING: Hidden import "mcp.server.validation" not found!
+65311 WARNING: Hidden import "mcp.server.websocket" not found!
+65311 WARNING: Hidden import "mcp.shared" not found!
+65311 WARNING: Hidden import "mcp.shared._httpx_utils" not found!
+65311 WARNING: Hidden import "mcp.shared.auth" not found!
+65312 WARNING: Hidden import "mcp.shared.auth_utils" not found!
+65312 WARNING: Hidden import "mcp.shared.context" not found!
+65312 WARNING: Hidden import "mcp.shared.exceptions" not found!
+65312 WARNING: Hidden import "mcp.shared.experimental" not found!
+65312 WARNING: Hidden import "mcp.shared.experimental.tasks" not found!
+65312 WARNING: Hidden import "mcp.shared.experimental.tasks.capabilities" not found!
+65312 WARNING: Hidden import "mcp.shared.experimental.tasks.context" not found!
+65312 WARNING: Hidden import "mcp.shared.experimental.tasks.helpers" not found!
+65312 WARNING: Hidden import "mcp.shared.experimental.tasks.in_memory_task_store" not found!
+65312 WARNING: Hidden import "mcp.shared.experimental.tasks.message_queue" not found!
+65312 WARNING: Hidden import "mcp.shared.experimental.tasks.polling" not found!
+65312 WARNING: Hidden import "mcp.shared.experimental.tasks.resolver" not found!
+65312 WARNING: Hidden import "mcp.shared.experimental.tasks.store" not found!
+65312 WARNING: Hidden import "mcp.shared.memory" not found!
+65312 WARNING: Hidden import "mcp.shared.message" not found!
+65313 WARNING: Hidden import "mcp.shared.metadata_utils" not found!
+65313 WARNING: Hidden import "mcp.shared.progress" not found!
+65313 WARNING: Hidden import "mcp.shared.response_router" not found!
+65313 WARNING: Hidden import "mcp.shared.session" not found!
+65313 WARNING: Hidden import "mcp.shared.tool_name_validation" not found!
+65313 WARNING: Hidden import "mcp.shared.version" not found!
+65313 WARNING: Hidden import "mcp.types" not found!
+65313 WARNING: Hidden import "mcp.server.__main__" not found!
+65313 WARNING: Hidden import "mcp.server.auth" not found!
+65313 WARNING: Hidden import "mcp.server.auth.errors" not found!
+65313 WARNING: Hidden import "mcp.server.auth.handlers" not found!
+65313 WARNING: Hidden import "mcp.server.auth.handlers.authorize" not found!
+65313 WARNING: Hidden import "mcp.server.auth.handlers.metadata" not found!
+65313 WARNING: Hidden import "mcp.server.auth.handlers.register" not found!
+65313 WARNING: Hidden import "mcp.server.auth.handlers.revoke" not found!
+65314 WARNING: Hidden import "mcp.server.auth.handlers.token" not found!
+65314 WARNING: Hidden import "mcp.server.auth.json_response" not found!
+65314 WARNING: Hidden import "mcp.server.auth.middleware" not found!
+65314 WARNING: Hidden import "mcp.server.auth.middleware.auth_context" not found!
+65314 WARNING: Hidden import "mcp.server.auth.middleware.bearer_auth" not found!
+65314 WARNING: Hidden import "mcp.server.auth.middleware.client_auth" not found!
+65314 WARNING: Hidden import "mcp.server.auth.provider" not found!
+65314 WARNING: Hidden import "mcp.server.auth.routes" not found!
+65314 WARNING: Hidden import "mcp.server.auth.settings" not found!
+65314 WARNING: Hidden import "mcp.server.elicitation" not found!
+65314 WARNING: Hidden import "mcp.server.experimental" not found!
+65314 WARNING: Hidden import "mcp.server.experimental.request_context" not found!
+65314 WARNING: Hidden import "mcp.server.experimental.session_features" not found!
+65314 WARNING: Hidden import "mcp.server.experimental.task_context" not found!
+65314 WARNING: Hidden import "mcp.server.experimental.task_result_handler" not found!
+65314 WARNING: Hidden import "mcp.server.experimental.task_scope" not found!
+65314 WARNING: Hidden import "mcp.server.experimental.task_support" not found!
+65314 WARNING: Hidden import "mcp.server.fastmcp" not found!
+65314 WARNING: Hidden import "mcp.server.fastmcp.exceptions" not found!
+65315 WARNING: Hidden import "mcp.server.fastmcp.prompts" not found!
+65315 WARNING: Hidden import "mcp.server.fastmcp.prompts.base" not found!
+65315 WARNING: Hidden import "mcp.server.fastmcp.prompts.manager" not found!
+65315 WARNING: Hidden import "mcp.server.fastmcp.resources" not found!
+65315 WARNING: Hidden import "mcp.server.fastmcp.resources.base" not found!
+65315 WARNING: Hidden import "mcp.server.fastmcp.resources.resource_manager" not found!
+65315 WARNING: Hidden import "mcp.server.fastmcp.resources.templates" not found!
+65315 WARNING: Hidden import "mcp.server.fastmcp.resources.types" not found!
+65315 WARNING: Hidden import "mcp.server.fastmcp.server" not found!
+65315 WARNING: Hidden import "mcp.server.fastmcp.tools" not found!
+65315 WARNING: Hidden import "mcp.server.fastmcp.tools.base" not found!
+65315 WARNING: Hidden import "mcp.server.fastmcp.tools.tool_manager" not found!
+65315 WARNING: Hidden import "mcp.server.fastmcp.utilities" not found!
+65315 WARNING: Hidden import "mcp.server.fastmcp.utilities.context_injection" not found!
+65315 WARNING: Hidden import "mcp.server.fastmcp.utilities.func_metadata" not found!
+65315 WARNING: Hidden import "mcp.server.fastmcp.utilities.logging" not found!
+65315 WARNING: Hidden import "mcp.server.fastmcp.utilities.types" not found!
+65315 WARNING: Hidden import "mcp.server.lowlevel" not found!
+65315 WARNING: Hidden import "mcp.server.lowlevel.experimental" not found!
+65315 WARNING: Hidden import "mcp.server.lowlevel.func_inspection" not found!
+65316 WARNING: Hidden import "mcp.server.lowlevel.helper_types" not found!
+65316 WARNING: Hidden import "mcp.server.lowlevel.server" not found!
+65316 WARNING: Hidden import "mcp.server.models" not found!
+65316 WARNING: Hidden import "mcp.server.session" not found!
+65316 WARNING: Hidden import "mcp.server.sse" not found!
+65316 WARNING: Hidden import "mcp.server.stdio" not found!
+65316 WARNING: Hidden import "mcp.server.streamable_http" not found!
+65316 WARNING: Hidden import "mcp.server.streamable_http_manager" not found!
+65316 WARNING: Hidden import "mcp.server.transport_security" not found!
+65316 WARNING: Hidden import "mcp.server.validation" not found!
+65316 WARNING: Hidden import "mcp.server.websocket" not found!
+65655 WARNING: Hidden import "pycparser.lextab" not found!
+65655 WARNING: Hidden import "pycparser.yacctab" not found!
+66133 INFO: Processing standard module hook 'hook-lxml.isoschematron.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+66308 INFO: Processing pre-safe-import-module hook 'hook-gi.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+66370 INFO: Processing pre-safe-import-module hook 'hook-autocommand.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks/pre_safe_import_module'
+66371 INFO: Setuptools: 'autocommand' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.autocommand'!
+69003 INFO: Processing standard module hook 'hook-lxml.objectify.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+69061 INFO: Performing binary vs. data reclassification (1303 entries)
+69433 INFO: Looking for ctypes DLLs
+69439 WARNING: Library ole32 required via ctypes not found
+69443 WARNING: Library shell32 required via ctypes not found
+69462 WARNING: Library Iphlpapi.dll required via ctypes not found
+69490 WARNING: Library user32 required via ctypes not found
+69497 WARNING: Library msvcrt required via ctypes not found
+69505 WARNING: Library msvcrt required via ctypes not found
+69593 INFO: Analyzing run-time hooks ...
+69616 INFO: Including run-time hook 'pyi_rth_pkgutil.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks/rthooks'
+69619 INFO: Including run-time hook 'pyi_rth_multiprocessing.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks/rthooks'
+69621 INFO: Including run-time hook 'pyi_rth_inspect.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks/rthooks'
+69623 INFO: Including run-time hook 'pyi_rth_cryptography_openssl.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/_pyinstaller_hooks_contrib/rthooks'
+69624 INFO: Including run-time hook 'pyi_rth_setuptools.py' from '/Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/hooks/rthooks'
+69739 INFO: Looking for dynamic libraries
+70230 INFO: Warnings written to /Users/kartik.arora/TABLEAU-MCP/build/tableau-mcp/warn-tableau-mcp.txt
+70508 INFO: Graph cross-reference written to /Users/kartik.arora/TABLEAU-MCP/build/tableau-mcp/xref-tableau-mcp.html
+70831 INFO: checking PYZ
+70831 INFO: Building PYZ because PYZ-00.toc is non existent
+70831 INFO: Building PYZ (ZlibArchive) /Users/kartik.arora/TABLEAU-MCP/build/tableau-mcp/PYZ-00.pyz
+73580 INFO: Building PYZ (ZlibArchive) /Users/kartik.arora/TABLEAU-MCP/build/tableau-mcp/PYZ-00.pyz completed successfully.
+73721 INFO: EXE target arch: x86_64
+73721 INFO: Code signing identity: None
+73748 INFO: checking PKG
+73749 INFO: Building PKG because PKG-00.toc is non existent
+73749 INFO: Building PKG (CArchive) tableau-mcp.pkg
+89862 INFO: Building PKG (CArchive) tableau-mcp.pkg completed successfully.
+89894 INFO: Bootloader /Users/kartik.arora/TABLEAU-MCP/venv/lib/python3.12/site-packages/PyInstaller/bootloader/Darwin-64bit/run
+89894 INFO: checking EXE
+89894 INFO: Building EXE because EXE-00.toc is non existent
+89894 INFO: Building EXE from EXE-00.toc
+89894 INFO: Copying bootloader EXE to /Users/kartik.arora/TABLEAU-MCP/dist/tableau-mcp
+89896 INFO: Converting EXE to target arch (x86_64)
+89938 INFO: Removing signature(s) from EXE
+89975 INFO: Appending PKG archive to EXE
+90039 INFO: Fixing EXE headers for code signing
+90049 INFO: Re-signing the EXE
+90452 INFO: Building EXE from EXE-00.toc completed successfully.
+((venv) ) kartik.arora@ndi-mb-150 TABLEAU-MCP % chmod +x dist/tableau-mcp                                                                                                  
+
+((venv) ) kartik.arora@ndi-mb-150 TABLEAU-MCP % ./dist/tableau-mcp                                                                                                         
+
+Traceback (most recent call last):
+  File "fastmcp/server/__init__.py", line 6, in <module>
+  File "PyInstaller/loader/pyimod02_importers.py", line 378, in exec_module
+  File "fastmcp/server/context.py", line 14, in <module>
+ImportError: cannot import name 'LoggingLevel' from 'mcp' (/var/folders/l4/dtb5wrb57mq627r79k3qzk6m0000gq/T/_MEI1MWD1X/mcp/__init__.pyc)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "fastmcp/__init__.py", line 64, in __getattr__
+  File "PyInstaller/loader/pyimod02_importers.py", line 378, in exec_module
+  File "fastmcp/server/__init__.py", line 9, in <module>
+ImportError: FastMCP server support is not installed. Install `fastmcp` or `fastmcp-slim[server]`.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "__main__.py", line 8, in <module>
+  File "PyInstaller/loader/pyimod02_importers.py", line 378, in exec_module
+  File "mcp/server.py", line 5, in <module>
+  File "fastmcp/__init__.py", line 66, in __getattr__
+ImportError: FastMCP server support is not installed. Install `fastmcp` or `fastmcp-slim[server]`.
+[PYI-32224:ERROR] Failed to execute script '__main__' due to unhandled exception!
+((venv) ) kartik.arora@ndi-mb-150 TABLEAU-MCP % 
