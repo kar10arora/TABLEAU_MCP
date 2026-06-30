@@ -275,12 +275,13 @@ Generate the blueprint now:"""
     
     def _call_gemini(self, prompt: str) -> Dict:
         """Call Google Gemini API."""
-        import google.generativeai as genai
-        
-        genai.configure(api_key=self.api_key)
-        model = genai.GenerativeModel('gemini-2.5-flash')
-        
-        response = model.generate_content(prompt)
+        from google import genai
+
+        client = genai.Client(api_key=self.api_key)
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+        )
         response_text = response.text.strip()
         
         # Extract JSON from response
