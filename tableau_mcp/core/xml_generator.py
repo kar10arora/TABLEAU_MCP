@@ -376,6 +376,7 @@ class TableauXMLCompiler:
             ds_id=ds_id,
             encodings=encodings_cfg,
             schema=schema,
+            aggregation=agg,
         )
 
         return f"""<worksheet name='{name}'>
@@ -671,68 +672,52 @@ class TableauXMLCompiler:
 
         return filters_xml, slices_xml
 
-    def _build_encodings_xml(self, ds_id: str, encodings: dict, schema) -> str:
+    def _build_encodings_xml(self, ds_id: str, encodings: dict, schema,
+                             aggregation: str = None) -> str:
         """
         Build <encodings> element with <color>, <size>, <text> children (Story 2.4).
 
         Encodings go inside <pane>, after <mark> element.
-
-        Each encoding is a child element:
-          <encodings>
-            <color column='[ds_id].[none:field:nk]' />
-            <size column='[ds_id].[sum:field:qk]' />
-            <text column='[ds_id].[none:field:nk]' />
-          </encodings>
 
         Returns XML string with wrapper (empty if no valid encodings).
         """
         if not encodings:
             return ""
 
+        agg_abbrev = self._get_aggregation_abbrev(self._normalize_aggregation(aggregation))
+
+        def _ci(field, ftype):
+            return f"[none:{field}:nk]" if ftype != "quantitative" else f"[{agg_abbrev}:{field}:qk]"
+
         lines = []
 
         # Color encoding
         if encodings.get("color"):
-            color_cfg = encodings["color"]
-            field = color_cfg.get("field", "")
-
+            field = encodings["color"].get("field", "")
             if field:
-                datatype, role, ftype = self._field_meta(field, schema)
-                ci_name = f"[none:{field}:nk]" if ftype != "quantitative" else f"[sum:{field}:qk]"
-                fq_column = f"[{ds_id}].{ci_name}"
-
-                lines.append(f"\n        <color column='{fq_column}' />")
+                _, _, ftype = self._field_meta(field, schema)
+                lines.append(f"\n        <color column='[{ds_id}].{_ci(field, ftype)}' />")
 
         # Size encoding
         if encodings.get("size"):
-            size_cfg = encodings["size"]
-            field = size_cfg.get("field", "")
-
+            field = encodings["size"].get("field", "")
             if field:
-                datatype, role, ftype = self._field_meta(field, schema)
-                ci_name = f"[none:{field}:nk]" if ftype != "quantitative" else f"[sum:{field}:qk]"
-                fq_column = f"[{ds_id}].{ci_name}"
-
-                lines.append(f"\n        <size column='{fq_column}' />")
+                _, _, ftype = self._field_meta(field, schema)
+                lines.append(f"\n        <size column='[{ds_id}].{_ci(field, ftype)}' />")
 
         # Tooltip encoding (stored as 'text' in Tableau XML)
         if encodings.get("tooltip"):
             tooltip_fields = encodings["tooltip"]
             if not isinstance(tooltip_fields, list):
                 tooltip_fields = [tooltip_fields]
-
             for field in tooltip_fields:
                 if field:
-                    datatype, role, ftype = self._field_meta(field, schema)
-                    ci_name = f"[none:{field}:nk]" if ftype != "quantitative" else f"[sum:{field}:qk]"
-                    fq_column = f"[{ds_id}].{ci_name}"
-
-                    lines.append(f"\n        <text column='{fq_column}' />")
+                    _, _, ftype = self._field_meta(field, schema)
+                    lines.append(f"\n        <text column='[{ds_id}].{_ci(field, ftype)}' />")
 
         if not lines:
             return ""
 
-        # Wrap in <encodings> element
         return f"\n      <encodings>{''.join(lines)}\n      </encodings>"
 
     # ------------------------------------------------------------------

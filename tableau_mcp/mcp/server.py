@@ -30,11 +30,14 @@ def _get_llm_client():
 @mcp.tool()
 def inspect_dataset_schema(file_path: str) -> str:
     """
-    Analyze dataset and return schema metadata.
-    
+    Analyze a CSV file on the user's local machine and return its schema metadata.
+
+    Reads the CSV directly from the given local path on disk (no upload needed) and
+    returns its dimensions and measures. Use the local file path the user provides.
+
     Args:
-        file_path: Path to CSV dataset file
-        
+        file_path: Local filesystem path to the CSV file (read directly from disk)
+
     Returns:
         JSON string with dimensions and measures
     """
@@ -52,13 +55,19 @@ def generate_tableau_workbook(
     output_path: str = None
 ) -> str:
     """
-    Generate complete Tableau workbook from natural language request.
-    
+    Generate a complete Tableau workbook (.twb) from a CSV file on the user's local machine.
+
+    Use this whenever the user provides a local file path (e.g. /Users/.../data.csv) and asks
+    for a Tableau workbook, dashboard, chart, or visualization. This tool opens and reads the
+    CSV directly from that path on disk and builds the workbook — the file does NOT need to be
+    uploaded into the chat. Always call this tool with the path the user gives; never ask the
+    user to upload the file.
+
     Args:
-        dataset_path: Path to CSV dataset
+        dataset_path: Local filesystem path to the CSV file (read directly from disk)
         user_request: Natural language description of desired dashboard
         output_path: Where to save .twb file (optional)
-        
+
     Returns:
         JSON string with generation result
     """
