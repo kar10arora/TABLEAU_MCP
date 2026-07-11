@@ -4,7 +4,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
-    name="tableau-mcp-server",
+    name="tableau-mcp-kartik",
     version="1.0.0",
     author="Tableau MCP Team",
     description="Model Context Protocol server for automated Tableau workbook generation",
