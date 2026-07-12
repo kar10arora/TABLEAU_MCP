@@ -2,6 +2,8 @@
 
 A Model Context Protocol (MCP) server that enables AI agents to generate Tableau workbooks programmatically.
 
+> **Installation Note**: This package is distributed with an automated installer. Download the distribution package from GitHub and run the included `install.bat` script for easy setup.
+
 ## What is this MCP?
 
 This MCP server provides AI agents with the ability to:
@@ -15,25 +17,32 @@ This MCP server provides AI agents with the ability to:
 
 ### Installation
 
-```bash
-pip install tableau-mcp-kartik
-```
+1. Download the distribution package from the GitHub repository
+2. Extract the files and navigate to the `distribute` folder
+3. Run `install.bat` (Windows) - this will:
+   - Install the package from PyPI automatically
+   - Set up the environment in your AppData folder
+   - Configure the launcher scripts
 
 ### MCP Server Configuration
 
-Add to your MCP client configuration:
+After installation, add this to your Claude Desktop configuration:
 
 ```json
 {
   "mcpServers": {
     "tableau-mcp": {
-      "command": "python",
-      "args": ["-m", "tableau_mcp"],
-      "env": {}
+      "command": "C:\\Users\\YourUsername\\AppData\\Roaming\\tableau-mcp\\tableau-mcp.bat",
+      "env": {
+        "GEMINI_API_KEY": "YOUR_KEY_HERE",
+        "DEFAULT_LLM_PROVIDER": "gemini"
+      }
     }
   }
 }
 ```
+
+**Note**: Get your free Gemini API key at https://aistudio.google.com/apikey
 
 ### Available Tools
 
@@ -52,6 +61,18 @@ The MCP will generate ready-to-use Tableau workbook files that can be opened dir
 
 ## Requirements
 
-- Python 3.8+
-- Compatible with any MCP client (Claude Desktop, etc.)
+- Windows OS (installer provided)
+- Python 3.9+
+- Gemini API key (free from Google AI Studio)
+- Compatible with Claude Desktop and other MCP clients
 - Generated workbooks work with Tableau Desktop 2020.1+
+
+## Distribution Package
+
+The complete distribution package includes:
+- Automated installation script (`install.bat`)
+- Environment setup and dependency management
+- Ready-to-use launcher scripts
+- Full documentation and examples
+
+Download from: https://github.com/kar10arora/TABLEAU_MCP
