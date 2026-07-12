@@ -207,6 +207,7 @@ class TableauXMLCompiler:
                     name=sheet["name"],
                     uuid=window_uuid,
                     maximized=(index == 0),
+                    zoom=sheet.get("zoom"),
                 )
 
                 worksheets_parent.append(etree.fromstring(ws_xml, self.parser))
@@ -1028,8 +1029,40 @@ class TableauXMLCompiler:
   <simple-id uuid='{uuid}' />
 </worksheet>"""
 
-    def _build_window(self, name: str, uuid: str, maximized: bool = False) -> str:
+    def _build_window(self, name: str, uuid: str,
+                      maximized: bool = False,
+                      zoom: str = None) -> str:
+        """
+        Build the <window> element for a worksheet tab.
+
+        zoom controls the View > Zoom Level setting:
+          None / "standard"     → no <zoom> element (Tableau default, 100%)
+          "entire-view"         → <zoom type='entire-view' />  (Fit entire view)
+          "fit-width"           → <zoom type='fit-width' />    (Fit width)
+          "fit-height"          → <zoom type='fit-height' />   (Fit height)
+
+        Blueprint field: "zoom": "entire-view"
+        """
         maximized_attr = "maximized='true'" if maximized else ""
+
+        # Normalise zoom value — map friendly aliases to Tableau XML tokens
+        _zoom_map = {
+            "entire-view":  "entire-view",
+            "entire_view":  "entire-view",
+            "entireview":   "entire-view",
+            "fit-width":    "fit-width",
+            "fit_width":    "fit-width",
+            "fitwidth":     "fit-width",
+            "fit-height":   "fit-height",
+            "fit_height":   "fit-height",
+            "fitheight":    "fit-height",
+        }
+        zoom_token = _zoom_map.get((zoom or "").lower().strip())
+        viewpoint_block = (
+            f"\n  <viewpoint>\n    <zoom type='{zoom_token}' />\n  </viewpoint>"
+            if zoom_token else ""
+        )
+
         return f"""<window class='worksheet' {maximized_attr} name='{name}'>
   <cards>
     <edge name='left'>
@@ -1050,7 +1083,7 @@ class TableauXMLCompiler:
         <card type='title' />
       </strip>
     </edge>
-  </cards>
+  </cards>{viewpoint_block}
   <simple-id uuid='{uuid}' />
 </window>"""
 
