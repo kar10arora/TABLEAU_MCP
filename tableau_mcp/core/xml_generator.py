@@ -102,6 +102,72 @@ class TableauXMLCompiler:
                         aggregation=aggregation,
                         format_cfg=sheet.get("format"),
                     )
+
+                elif mark_type == "Scatter":
+                    # ── Scatter Plot (Story 3.1) ───────────────────────────────
+                    ws_xml = self._build_scatter_worksheet(
+                        name=sheet["name"],
+                        ds_id=ds_id,
+                        col_field=sheet.get("column_field", ""),
+                        row_field=sheet.get("row_field", ""),
+                        detail_field=sheet.get("detail_field"),
+                        encodings_cfg=sheet.get("encodings"),
+                        uuid=sheet_uuid,
+                        schema=schema,
+                        aggregation=aggregation,
+                    )
+
+                elif mark_type == "Pie":
+                    # ── Pie Chart ────────────────────────────────────────────
+                    ws_xml = self._build_pie_worksheet(
+                        name=sheet["name"],
+                        ds_id=ds_id,
+                        color_field=sheet.get("color_field", ""),
+                        size_field=sheet.get("size_field", ""),
+                        label_fields=sheet.get("label_fields"),
+                        uuid=sheet_uuid,
+                        schema=schema,
+                        aggregation=aggregation,
+                    )
+
+                elif mark_type == "BoxPlot":
+                    # ── Box-Whisker Plot ──────────────────────────────────────
+                    ws_xml = self._build_boxplot_worksheet(
+                        name=sheet["name"],
+                        ds_id=ds_id,
+                        row_field=sheet.get("row_field", ""),
+                        detail_field=sheet.get("detail_field"),
+                        uuid=sheet_uuid,
+                        schema=schema,
+                        aggregation=aggregation,
+                    )
+
+                elif mark_type == "Histogram":
+                    # ── Histogram ─────────────────────────────────────────────
+                    ws_xml = self._build_histogram_worksheet(
+                        name=sheet["name"],
+                        ds_id=ds_id,
+                        measure_field=sheet.get("row_field", ""),
+                        bin_size=sheet.get("bin_size"),
+                        color_field=sheet.get("color_field"),
+                        uuid=sheet_uuid,
+                        schema=schema,
+                    )
+
+                elif mark_type == "ComboChart":
+                    # ── Bar-Line Combo Chart ──────────────────────────────────
+                    ws_xml = self._build_combo_worksheet(
+                        name=sheet["name"],
+                        ds_id=ds_id,
+                        date_field=sheet.get("column_field", ""),
+                        date_trunc=sheet.get("date_trunc", "Quarter"),
+                        bar_field=sheet.get("bar_field", ""),
+                        line_field=sheet.get("line_field", ""),
+                        uuid=sheet_uuid,
+                        schema=schema,
+                        aggregation=aggregation,
+                    )
+
                 else:
                     # ── Regular chart path ─────────────────────────────────────
                     col_field = sheet.get("column_field") or ""
@@ -149,6 +215,16 @@ class TableauXMLCompiler:
 
             except Exception as exc:
                 print(f"Warning: skipped sheet '{sheet.get('name')}': {exc}")
+
+        # ── 4. Strip template artefacts that cause Tableau load errors ─
+        # <referenced-extensions> carries extension manifests from the template
+        # that reference non-existent sheets → schema validation error D2E8DA72.
+        # <thumbnails> contains stale preview images for old template sheets.
+        # Neither is needed for the workbook to open and render correctly.
+        for tag in ("referenced-extensions", "thumbnails"):
+            elem = root.find(tag)
+            if elem is not None:
+                root.remove(elem)
 
         tree.write(output_path, encoding="utf-8", xml_declaration=True)
 
@@ -404,6 +480,554 @@ class TableauXMLCompiler:
   <simple-id uuid='{uuid}' />
 </worksheet>"""
 
+    # ------------------------------------------------------------------
+    # Scatter Plot builder (Story 3.1)
+    # ------------------------------------------------------------------
+
+    def _build_scatter_worksheet(self, name: str, ds_id: str,
+                                  col_field: str, row_field: str,
+                                  detail_field: str = None,
+                                  encodings_cfg: dict = None,
+                                  uuid: str = "",
+                                  schema: dict = None,
+                                  aggregation: str = None) -> str:
+        """
+        Build a scatter plot worksheet (measure vs measure).
+
+        Pattern from generated_workbook.twb 'Single Scatter Plot':
+        - Cols = SUM(measure_x), Rows = SUM(measure_y)
+        - Mark class = 'Automatic' (Tableau auto-picks circle for dual-measure)
+        - Color + Shape encodings from a Dimension field
+        - No sorting needed; both axes are measures
+
+        Blueprint example:
+            {
+              "mark_type": "Scatter",
+              "column_field": "Unit_Price",
+              "row_field": "Unit_Cost",
+              "detail_field": "Product_ID",
+              "encodings": {
+                "color": {"field": "Product_Category"},
+                "shape": {"field": "Product_Category"}
+              }
+            }
+        """
+        agg = self._normalize_aggregation(aggregation)
+        agg_abbrev = self._get_aggregation_abbrev(agg)
+
+        col_dt, col_role, col_type = self._field_meta(col_field, schema)
+        row_dt, row_role, row_type = self._field_meta(row_field, schema)
+
+        col_ci = f"[{agg_abbrev}:{col_field}:qk]"
+        row_ci = f"[{agg_abbrev}:{row_field}:qk]"
+
+        # datasource-dependencies: x/y measures
+        field_decls = (
+            f"\n        <column datatype='{col_dt}' name='[{col_field}]' role='{col_role}' type='{col_type}' />"
+            f"\n        <column datatype='{row_dt}' name='[{row_field}]' role='{row_role}' type='{row_type}' />"
+            f"\n        <column-instance column='[{col_field}]' derivation='{agg}' name='{col_ci}' pivot='key' type='{col_type}' />"
+            f"\n        <column-instance column='[{row_field}]' derivation='{agg}' name='{row_ci}' pivot='key' type='{row_type}' />"
+        )
+
+        # Detail (LOD) field — adds granularity so each point = one row
+        lod_encoding = ""
+        if detail_field:
+            d_dt, d_role, d_type = self._field_meta(detail_field, schema)
+            d_ci = f"[none:{detail_field}:nk]"
+            field_decls += (
+                f"\n        <column datatype='{d_dt}' name='[{detail_field}]' role='{d_role}' type='{d_type}' />"
+                f"\n        <column-instance column='[{detail_field}]' derivation='None' name='{d_ci}' pivot='key' type='{d_type}' />"
+            )
+            lod_encoding = f"\n        <lod column='[{ds_id}].{d_ci}' />"
+
+        # Encoding fields (color, size, shape, tooltip)
+        enc_field_decls = self._build_encoding_field_declarations(encodings_cfg, schema)
+
+        # Build encodings XML — also handle shape separately
+        enc_lines = []
+        if encodings_cfg:
+            if encodings_cfg.get("color"):
+                field = encodings_cfg["color"].get("field", "")
+                if field:
+                    _, _, ftype = self._field_meta(field, schema)
+                    ci = f"[none:{field}:nk]" if ftype != "quantitative" else f"[{agg_abbrev}:{field}:qk]"
+                    enc_lines.append(f"\n        <color column='[{ds_id}].{ci}' />")
+            if encodings_cfg.get("shape"):
+                field = encodings_cfg["shape"].get("field", "")
+                if field:
+                    _, _, ftype = self._field_meta(field, schema)
+                    ci = f"[none:{field}:nk]" if ftype != "quantitative" else f"[{agg_abbrev}:{field}:qk]"
+                    enc_lines.append(f"\n        <shape column='[{ds_id}].{ci}' />")
+                    # shape field also needs a column-instance declared if not already added
+            if encodings_cfg.get("size"):
+                field = encodings_cfg["size"].get("field", "")
+                if field:
+                    _, _, ftype = self._field_meta(field, schema)
+                    ci = f"[none:{field}:nk]" if ftype != "quantitative" else f"[{agg_abbrev}:{field}:qk]"
+                    enc_lines.append(f"\n        <size column='[{ds_id}].{ci}' />")
+
+        if lod_encoding:
+            enc_lines.append(lod_encoding)
+
+        encodings_block = ""
+        if enc_lines:
+            encodings_block = f"\n      <encodings>{''.join(enc_lines)}\n      </encodings>"
+
+        # Add shape field declarations if present (not covered by _build_encoding_field_declarations)
+        shape_field_decls = ""
+        if encodings_cfg and encodings_cfg.get("shape"):
+            field = encodings_cfg["shape"].get("field", "")
+            if field:
+                dt, role, ftype = self._field_meta(field, schema)
+                ci_name = f"[none:{field}:nk]" if ftype != "quantitative" else f"[{agg_abbrev}:{field}:qk]"
+                derivation = "None" if ftype != "quantitative" else agg
+                shape_field_decls = (
+                    f"\n        <column datatype='{dt}' name='[{field}]' role='{role}' type='{ftype}' />"
+                    f"\n        <column-instance column='[{field}]' derivation='{derivation}' "
+                    f"name='{ci_name}' pivot='key' type='{ftype}' />"
+                )
+
+        return f"""<worksheet name='{name}'>
+  <table>
+    <view>
+      <datasources>
+        <datasource name='{ds_id}' />
+      </datasources>
+      <datasource-dependencies datasource='{ds_id}'>{field_decls}{enc_field_decls}{shape_field_decls}
+      </datasource-dependencies>
+      <aggregation value='true' />
+    </view>
+    <style />
+    <panes>
+      <pane selection-relaxation-option='selection-relaxation-allow'>
+        <view>
+          <breakdown value='auto' />
+        </view>
+        <mark class='Automatic' />{encodings_block}
+      </pane>
+    </panes>
+    <rows>[{ds_id}].{row_ci}</rows>
+    <cols>[{ds_id}].{col_ci}</cols>
+  </table>
+  <simple-id uuid='{uuid}' />
+</worksheet>"""
+
+    # ------------------------------------------------------------------
+    # Pie Chart builder
+    # ------------------------------------------------------------------
+
+    def _build_pie_worksheet(self, name: str, ds_id: str,
+                              color_field: str, size_field: str,
+                              label_fields: list = None,
+                              uuid: str = "",
+                              schema: dict = None,
+                              aggregation: str = None) -> str:
+        """
+        Build a Pie chart worksheet.
+
+        Pattern from generated_workbook.twb 'Pie chart':
+        - Rows = empty, Cols = empty
+        - Mark class = 'Pie'
+        - Color = Dimension (slice identity)
+        - Size = SUM(measure) for physical size of the pie
+        - Wedge-size = SUM(measure) for angle/proportion
+        - Text = measure + dimension for labels
+        - No shelf fields (rows/cols empty)
+
+        Blueprint example:
+            {
+              "mark_type": "Pie",
+              "color_field": "Sales_Rep",
+              "size_field": "Sales_Amount",
+              "label_fields": ["Sales_Amount", "Sales_Rep"]
+            }
+        """
+        agg = self._normalize_aggregation(aggregation)
+        agg_abbrev = self._get_aggregation_abbrev(agg)
+
+        color_dt, color_role, color_type = self._field_meta(color_field, schema)
+        size_dt, size_role, size_type = self._field_meta(size_field, schema)
+
+        color_ci = f"[none:{color_field}:nk]"
+        size_ci = f"[{agg_abbrev}:{size_field}:qk]"
+
+        field_decls = (
+            f"\n        <column datatype='{color_dt}' name='[{color_field}]' role='{color_role}' type='{color_type}' />"
+            f"\n        <column datatype='{size_dt}' name='[{size_field}]' role='{size_role}' type='{size_type}' />"
+            f"\n        <column-instance column='[{color_field}]' derivation='None' name='{color_ci}' pivot='key' type='{color_type}' />"
+            f"\n        <column-instance column='[{size_field}]' derivation='{agg}' name='{size_ci}' pivot='key' type='{size_type}' />"
+        )
+
+        # Optional extra label fields
+        if label_fields:
+            for lf in label_fields:
+                if lf and lf not in (color_field, size_field):
+                    ldt, lrole, ltype = self._field_meta(lf, schema)
+                    lci = f"[none:{lf}:nk]" if ltype != "quantitative" else f"[{agg_abbrev}:{lf}:qk]"
+                    lderiv = "None" if ltype != "quantitative" else agg
+                    field_decls += (
+                        f"\n        <column datatype='{ldt}' name='[{lf}]' role='{lrole}' type='{ltype}' />"
+                        f"\n        <column-instance column='[{lf}]' derivation='{lderiv}' name='{lci}' pivot='key' type='{ltype}' />"
+                    )
+
+        # Encodings: color, size, wedge-size, text
+        enc_lines = [
+            f"\n        <color column='[{ds_id}].{color_ci}' />",
+            f"\n        <size column='[{ds_id}].{size_ci}' />",
+            f"\n        <wedge-size column='[{ds_id}].{size_ci}' />",
+            f"\n        <text column='[{ds_id}].{size_ci}' />",
+            f"\n        <text column='[{ds_id}].{color_ci}' />",
+        ]
+        if label_fields:
+            for lf in label_fields:
+                if lf and lf not in (color_field, size_field):
+                    _, _, ltype = self._field_meta(lf, schema)
+                    lci = f"[none:{lf}:nk]" if ltype != "quantitative" else f"[{agg_abbrev}:{lf}:qk]"
+                    enc_lines.append(f"\n        <text column='[{ds_id}].{lci}' />")
+
+        encodings_block = f"\n      <encodings>{''.join(enc_lines)}\n      </encodings>"
+
+        return f"""<worksheet name='{name}'>
+  <table>
+    <view>
+      <datasources>
+        <datasource name='{ds_id}' />
+      </datasources>
+      <datasource-dependencies datasource='{ds_id}'>{field_decls}
+      </datasource-dependencies>
+      <aggregation value='true' />
+    </view>
+    <style>
+      <style-rule element='mark'>
+        <format attr='mark-labels-show' value='true' />
+        <format attr='mark-labels-cull' value='true' />
+      </style-rule>
+    </style>
+    <panes>
+      <pane selection-relaxation-option='selection-relaxation-allow'>
+        <view>
+          <breakdown value='auto' />
+        </view>
+        <mark class='Pie' />{encodings_block}
+      </pane>
+    </panes>
+    <rows />
+    <cols />
+  </table>
+  <simple-id uuid='{uuid}' />
+</worksheet>"""
+
+    # ------------------------------------------------------------------
+    # Box-Whisker Plot builder
+    # ------------------------------------------------------------------
+
+    def _build_boxplot_worksheet(self, name: str, ds_id: str,
+                                  row_field: str,
+                                  detail_field: str = None,
+                                  uuid: str = "",
+                                  schema: dict = None,
+                                  aggregation: str = None) -> str:
+        """
+        Build a Box-Whisker plot worksheet.
+
+        Pattern from generated_workbook.twb 'Box-Whisker-plot':
+        - Rows = SUM(measure), Cols = empty
+        - Mark class = 'Circle'
+        - LOD (detail) = Dimension (defines granularity of the distribution)
+        - reference-line with boxplot-whisker-type='standard'
+        - Small mark size (0.25)
+
+        Blueprint example:
+            {
+              "mark_type": "BoxPlot",
+              "row_field": "Quantity_Sold",
+              "detail_field": "Sales_Rep"
+            }
+        """
+        agg = self._normalize_aggregation(aggregation)
+        agg_abbrev = self._get_aggregation_abbrev(agg)
+
+        row_dt, row_role, row_type = self._field_meta(row_field, schema)
+        row_ci = f"[{agg_abbrev}:{row_field}:qk]"
+
+        field_decls = (
+            f"\n        <column datatype='{row_dt}' name='[{row_field}]' role='{row_role}' type='{row_type}' />"
+            f"\n        <column-instance column='[{row_field}]' derivation='{agg}' name='{row_ci}' pivot='key' type='{row_type}' />"
+        )
+
+        lod_encoding = ""
+        if detail_field:
+            d_dt, d_role, d_type = self._field_meta(detail_field, schema)
+            d_ci = f"[none:{detail_field}:nk]"
+            field_decls += (
+                f"\n        <column datatype='{d_dt}' name='[{detail_field}]' role='{d_role}' type='{d_type}' />"
+                f"\n        <column-instance column='[{detail_field}]' derivation='None' name='{d_ci}' pivot='key' type='{d_type}' />"
+            )
+            lod_encoding = f"\n        <lod column='[{ds_id}].{d_ci}' />"
+
+        encodings_block = ""
+        if lod_encoding:
+            encodings_block = f"\n      <encodings>{lod_encoding}\n      </encodings>"
+
+        row_fq = f"[{ds_id}].{row_ci}"
+
+        return f"""<worksheet name='{name}'>
+  <table>
+    <view>
+      <datasources>
+        <datasource name='{ds_id}' />
+      </datasources>
+      <datasource-dependencies datasource='{ds_id}'>{field_decls}
+      </datasource-dependencies>
+      <aggregation value='true' />
+    </view>
+    <style />
+    <panes>
+      <pane id='1' selection-relaxation-option='selection-relaxation-allow'>
+        <view>
+          <breakdown value='auto' />
+        </view>
+        <mark class='Circle' />{encodings_block}
+        <reference-line axis-column='{row_fq}' boxplot-mark-exclusion='false'
+          boxplot-whisker-type='standard' enable-instant-analytics='true'
+          formula='average' id='refline0' label-type='automatic' probability='95'
+          scope='per-cell' symmetric='false' value-column='{row_fq}' z-order='1' />
+        <style>
+          <style-rule element='mark'>
+            <format attr='size' value='0.25' />
+          </style-rule>
+        </style>
+      </pane>
+    </panes>
+    <rows>{row_fq}</rows>
+    <cols />
+  </table>
+  <simple-id uuid='{uuid}' />
+</worksheet>"""
+
+    # ------------------------------------------------------------------
+    # Histogram builder
+    # ------------------------------------------------------------------
+
+    def _build_histogram_worksheet(self, name: str, ds_id: str,
+                                    measure_field: str,
+                                    bin_size: float = None,
+                                    color_field: str = None,
+                                    uuid: str = "",
+                                    schema: dict = None) -> str:
+        """
+        Build a Histogram worksheet.
+
+        Pattern from generated_workbook.twb 'Histogram':
+        - Rows = COUNT(measure)
+        - Cols = Dimension * Bin(measure)  — if color_field given; else just Bin(measure)
+        - Mark class = 'Automatic' with mark-sizing (left-aligned, custom size)
+        - Requires a bin calculation column in <datasource-dependencies>
+        - Bin name follows Tableau convention: "[Field (bin)]"
+
+        Blueprint example:
+            {
+              "mark_type": "Histogram",
+              "row_field": "Sales_Amount",
+              "bin_size": 300,
+              "color_field": "Region"
+            }
+        """
+        m_dt, m_role, m_type = self._field_meta(measure_field, schema)
+
+        # Count column-instance (rows)
+        cnt_ci = f"[cnt:{measure_field}:qk]"
+        # Bin column name follows Tableau pattern: "Field (bin)"
+        bin_field_name = f"{measure_field} (bin)"
+        bin_ci = f"[none:{bin_field_name}:qk]"
+
+        # Infer bin size if not given
+        if bin_size is None:
+            bin_size = 10  # sensible default
+
+        field_decls = (
+            f"\n        <column datatype='{m_dt}' name='[{measure_field}]' role='{m_role}' type='{m_type}' />"
+            f"\n        <column datatype='integer' name='[{bin_field_name}]' role='dimension' type='quantitative'>"
+            f"\n          <calculation class='bin' decimals='2' formula='[{measure_field}]' peg='0' size='{bin_size}' />"
+            f"\n        </column>"
+            f"\n        <column-instance column='[{measure_field}]' derivation='Count' name='{cnt_ci}' pivot='key' type='quantitative' />"
+            f"\n        <column-instance column='[{bin_field_name}]' derivation='None' name='{bin_ci}' pivot='key' type='quantitative' />"
+        )
+
+        rows_ref = f"[{ds_id}].{cnt_ci}"
+        cols_ref = f"[{ds_id}].{bin_ci}"
+
+        # Optional color dimension breaks out histogram by category
+        color_encoding = ""
+        if color_field:
+            c_dt, c_role, c_type = self._field_meta(color_field, schema)
+            c_ci = f"[none:{color_field}:nk]"
+            field_decls += (
+                f"\n        <column datatype='{c_dt}' name='[{color_field}]' role='{c_role}' type='{c_type}' />"
+                f"\n        <column-instance column='[{color_field}]' derivation='None' name='{c_ci}' pivot='key' type='{c_type}' />"
+            )
+            # Cols becomes (Region * Bin)
+            cols_ref = f"([{ds_id}].{c_ci} * [{ds_id}].{bin_ci})"
+
+        return f"""<worksheet name='{name}'>
+  <table>
+    <view>
+      <datasources>
+        <datasource name='{ds_id}' />
+      </datasources>
+      <datasource-dependencies datasource='{ds_id}'>{field_decls}
+      </datasource-dependencies>
+      <aggregation value='true' />
+    </view>
+    <style />
+    <panes>
+      <pane selection-relaxation-option='selection-relaxation-allow'>
+        <view>
+          <breakdown value='auto' />
+        </view>
+        <mark class='Automatic' />
+        <mark-sizing custom-mark-size-in-axis-units='1.0' mark-alignment='mark-alignment-left'
+          mark-sizing-setting='marks-scaling-on' use-custom-mark-size='false' />
+      </pane>
+    </panes>
+    <rows>{rows_ref}</rows>
+    <cols>{cols_ref}</cols>
+    <show-full-range>
+      <column>[{ds_id}].[{bin_field_name}]</column>
+    </show-full-range>
+  </table>
+  <simple-id uuid='{uuid}' />
+</worksheet>"""
+
+    # ------------------------------------------------------------------
+    # Bar-Line Combo Chart builder
+    # ------------------------------------------------------------------
+
+    def _build_combo_worksheet(self, name: str, ds_id: str,
+                                date_field: str,
+                                date_trunc: str = "Quarter",
+                                bar_field: str = "",
+                                line_field: str = "",
+                                uuid: str = "",
+                                schema: dict = None,
+                                aggregation: str = None) -> str:
+        """
+        Build a dual-measure Bar + Line combo chart with a date on columns.
+
+        Pattern from generated_workbook.twb 'Bar-LineChart-quarter':
+        - Cols = Date (Quarter-Trunc or Month-Trunc)
+        - Rows = SUM(bar_field) + SUM(line_field)  (two measures combined)
+        - Three panes:
+            pane 0 (id omitted): Automatic mark, Measure Names color
+            pane 1 (id=1): Bar mark (the bar_field axis), no scaling
+            pane 2 (id=2): Automatic mark (line_field axis)
+        - Style: axis space-fold on line_field axis
+        - Measure Names color encoding on all panes
+
+        Date trunc options: "Quarter" → "tqr", "Month" → "tmn", "Year" → "yr"
+
+        Blueprint example:
+            {
+              "mark_type": "ComboChart",
+              "column_field": "Sale_Date",
+              "date_trunc": "Quarter",
+              "bar_field": "Discount",
+              "line_field": "Sales_Amount",
+              "aggregation": "Sum"
+            }
+        """
+        agg = self._normalize_aggregation(aggregation)
+        agg_abbrev = self._get_aggregation_abbrev(agg)
+
+        # Date truncation mapping → Tableau derivation name and CI prefix
+        trunc_map = {
+            "quarter": ("Quarter-Trunc", "tqr"),
+            "month":   ("Month-Trunc",   "tmn"),
+            "year":    ("Year-Trunc",     "yr"),
+            "week":    ("Week-Trunc",     "twk"),
+            "day":     ("Day-Trunc",      "tdy"),
+        }
+        trunc_key = date_trunc.lower()
+        trunc_derivation, trunc_prefix = trunc_map.get(trunc_key, ("Quarter-Trunc", "tqr"))
+        date_ci = f"[{trunc_prefix}:{date_field}:qk]"
+
+        d_dt, d_role, d_type = self._field_meta(date_field, schema)
+        b_dt, b_role, b_type = self._field_meta(bar_field, schema)
+        l_dt, l_role, l_type = self._field_meta(line_field, schema)
+
+        bar_ci = f"[{agg_abbrev}:{bar_field}:qk]"
+        line_ci = f"[{agg_abbrev}:{line_field}:qk]"
+
+        field_decls = (
+            f"\n        <column datatype='{b_dt}' name='[{bar_field}]' role='{b_role}' type='{b_type}' />"
+            f"\n        <column datatype='{d_dt}' name='[{date_field}]' role='{d_role}' type='{d_type}' />"
+            f"\n        <column datatype='{l_dt}' name='[{line_field}]' role='{l_role}' type='{l_type}' />"
+            f"\n        <column-instance column='[{bar_field}]' derivation='{agg}' name='{bar_ci}' pivot='key' type='{b_type}' />"
+            f"\n        <column-instance column='[{line_field}]' derivation='{agg}' name='{line_ci}' pivot='key' type='{l_type}' />"
+            f"\n        <column-instance column='[{date_field}]' derivation='{trunc_derivation}' name='{date_ci}' pivot='key' type='quantitative' />"
+        )
+
+        bar_fq  = f"[{ds_id}].{bar_ci}"
+        line_fq = f"[{ds_id}].{line_ci}"
+        date_fq = f"[{ds_id}].{date_ci}"
+        mnames  = f"[{ds_id}].[:Measure Names]"
+
+        rows_ref = f"({bar_fq} + {line_fq})"
+
+        return f"""<worksheet name='{name}'>
+  <table>
+    <view>
+      <datasources>
+        <datasource name='{ds_id}' />
+      </datasources>
+      <datasource-dependencies datasource='{ds_id}'>{field_decls}
+      </datasource-dependencies>
+      <aggregation value='true' />
+    </view>
+    <style>
+      <style-rule element='axis'>
+        <encoding attr='space' class='0' field='{line_fq}' field-type='quantitative'
+          fold='true' scope='rows' type='space' />
+      </style-rule>
+    </style>
+    <panes>
+      <pane selection-relaxation-option='selection-relaxation-allow'>
+        <view>
+          <breakdown value='auto' />
+        </view>
+        <mark class='Automatic' />
+        <encodings>
+          <color column='{mnames}' />
+        </encodings>
+      </pane>
+      <pane id='1' selection-relaxation-option='selection-relaxation-allow'
+        y-axis-name='{bar_fq}'>
+        <view>
+          <breakdown value='auto' />
+        </view>
+        <mark class='Bar' />
+        <mark-sizing mark-sizing-setting='marks-scaling-off' />
+        <encodings>
+          <color column='{mnames}' />
+        </encodings>
+      </pane>
+      <pane id='2' selection-relaxation-option='selection-relaxation-allow'
+        y-axis-name='{line_fq}'>
+        <view>
+          <breakdown value='auto' />
+        </view>
+        <mark class='Automatic' />
+        <encodings>
+          <color column='{mnames}' />
+        </encodings>
+      </pane>
+    </panes>
+    <rows>{rows_ref}</rows>
+    <cols>{date_fq}</cols>
+  </table>
+  <simple-id uuid='{uuid}' />
+</worksheet>"""
+
     def _build_window(self, name: str, uuid: str, maximized: bool = False) -> str:
         maximized_attr = "maximized='true'" if maximized else ""
         return f"""<window class='worksheet' {maximized_attr} name='{name}'>
@@ -528,12 +1152,14 @@ class TableauXMLCompiler:
         lines = []
         seen_fields = set()
 
-        # Extract all fields from encodings (color, size, tooltip)
+        # Extract all fields from encodings (color, size, shape, tooltip)
         fields_to_declare = set()
         if encodings.get("color") and encodings["color"].get("field"):
             fields_to_declare.add(encodings["color"]["field"])
         if encodings.get("size") and encodings["size"].get("field"):
             fields_to_declare.add(encodings["size"]["field"])
+        if encodings.get("shape") and encodings["shape"].get("field"):
+            fields_to_declare.add(encodings["shape"]["field"])
         if encodings.get("tooltip"):
             tooltip_fields = encodings["tooltip"]
             if isinstance(tooltip_fields, list):
