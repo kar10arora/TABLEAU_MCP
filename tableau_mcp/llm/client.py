@@ -94,7 +94,70 @@ Choose mark_type based on these signals in the user request:
 - Always include aggregation (Sum, Avg, Count, etc.)
 - Optionally include format with number_format for currency/percentage
 
+**Scatter** (measure vs measure, correlation, relationship):
+- Keywords: "vs", "versus", "correlation", "relationship between", "scatter",
+  "compare X and Y", "price vs cost", "profit vs sales", "X against Y"
+- Requires column_field = one measure, row_field = another measure
+- Optionally include detail_field (a dimension) for per-row granularity
+- Optionally add encodings.color and encodings.shape from a dimension
+
+**Pie** (part-to-whole, share, composition):
+- Keywords: "pie", "share", "proportion", "percentage of total", "composition",
+  "breakdown of", "contribution", "slice", "how much each", "what percentage"
+- Requires color_field = dimension, size_field = measure
+- Optionally include label_fields to show values on slices
+
+**BoxPlot** (distribution, spread, outliers, range):
+- Keywords: "box plot", "box-whisker", "whisker", "distribution", "spread",
+  "outliers", "quartile", "median range", "variability", "dispersion"
+- Requires row_field = measure, detail_field = dimension (grouping)
+
+**Histogram** (frequency distribution, bins, count):
+- Keywords: "histogram", "frequency", "distribution of", "how many fall",
+  "bins", "buckets", "count of values", "value distribution"
+- Requires row_field = measure (COUNT will be applied automatically)
+- Optionally include bin_size (numeric), color_field = dimension for split
+
+**ComboChart** (bar + line dual measure over time):
+- Keywords: "bar and line", "combo", "dual axis", "two measures over time",
+  "compare two metrics over", "overlay", "combined chart"
+- Requires column_field = date dimension, bar_field = measure, line_field = measure
+- Optionally include date_trunc: "Quarter" (default), "Month", "Year"
+
+**Bar** (default for categorical comparisons):
+- "by category", "compare", "ranking", "top N", "bottom N", "breakdown"
+
+**Line** (continuous data over time, direction, change):
+- Keywords: trend, over time, timeline, trajectory, history, historical,
+  chronological, fluctuation, spike, dip, seasonal, time-series,
+  "by year", "monthly", "quarterly", "daily", "hourly",
+  growth rate, momentum, pace, pattern over, evolution of.
+- Default when column_field is a date/time dimension.
+
+**Area** (volume, cumulative magnitude, stacked contributions over time):
+- Keywords: area under curve, cumulative, volume over time, running total,
+  stacked trend, share over time, proportion over time,
+  filled, contribution over time.
+
+**Text** (single summary KPI number, no axis):
+- Keywords: "KPI", "total", "grand total", "show me the total", "what is the total",
+  "display the sum", "summarize", "single number", "big number", "headline metric",
+  "scorecard", "how much total", "overall", "all-time", "in total"
+- Use when the user wants ONE prominent number, not a chart
+- Set column_field to null — no dimension axis needed
+- Always include aggregation (Sum, Avg, Count, etc.)
+- Optionally include format with number_format for currency/percentage
+
 **Automatic**: let Tableau decide (use only when intent is unclear).
+
+## Zoom / Viewpoint Selection Rules
+
+Include a "zoom" field on any sheet when the user wants a specific view fit:
+
+- "fit entire view", "fit all", "fit view", "show everything", "entire view" → "entire-view"
+- "fit width", "fit to width", "fill width", "wide view" → "fit-width"
+- "fit height", "fit to height", "fill height", "tall view" → "fit-height"
+- No zoom keyword → omit the "zoom" field entirely (Tableau default = standard 100%)
 
 ## Sort Selection Rules
 
@@ -221,6 +284,7 @@ Regular chart sheet:
       "row_field": "<field from measures list>",
       "mark_type": "Bar | Line | Area | Circle | Automatic",
       "aggregation": "Avg | Min | Max | Median | Count | CountD | StdDev",
+      "zoom": "entire-view | fit-width | fit-height",
       "sort": {{
         "field": "<measure field to sort by>",
         "direction": "DESC | ASC",
@@ -248,6 +312,81 @@ Regular chart sheet:
   ]
 }}
 
+Scatter plot sheet (measure vs measure):
+{{
+  "sheets": [
+    {{
+      "name": "Price vs Cost by Category",
+      "mark_type": "Scatter",
+      "column_field": "<measure for X axis>",
+      "row_field": "<measure for Y axis>",
+      "detail_field": "<dimension for per-point granularity>",
+      "zoom": "entire-view | fit-width | fit-height",
+      "encodings": {{
+        "color": {{"field": "<dimension>"}},
+        "shape": {{"field": "<dimension>"}}
+      }}
+    }}
+  ]
+}}
+
+Pie chart sheet:
+{{
+  "sheets": [
+    {{
+      "name": "Sales Share by Region",
+      "mark_type": "Pie",
+      "color_field": "<dimension for slice identity>",
+      "size_field": "<measure for slice size>",
+      "label_fields": ["<measure>", "<dimension>"],
+      "zoom": "entire-view | fit-width | fit-height"
+    }}
+  ]
+}}
+
+Box-whisker plot sheet:
+{{
+  "sheets": [
+    {{
+      "name": "Quantity Distribution by Sales Rep",
+      "mark_type": "BoxPlot",
+      "row_field": "<measure for distribution>",
+      "detail_field": "<dimension for grouping>",
+      "zoom": "entire-view | fit-width | fit-height"
+    }}
+  ]
+}}
+
+Histogram sheet:
+{{
+  "sheets": [
+    {{
+      "name": "Sales Amount Distribution",
+      "mark_type": "Histogram",
+      "row_field": "<measure to distribute>",
+      "bin_size": 500,
+      "color_field": "<dimension to split bars (optional)>",
+      "zoom": "entire-view | fit-width | fit-height"
+    }}
+  ]
+}}
+
+Combo bar-line chart sheet:
+{{
+  "sheets": [
+    {{
+      "name": "Discount vs Sales by Quarter",
+      "mark_type": "ComboChart",
+      "column_field": "<date dimension>",
+      "date_trunc": "Quarter | Month | Year",
+      "bar_field": "<measure for bar>",
+      "line_field": "<measure for line>",
+      "aggregation": "Sum",
+      "zoom": "entire-view | fit-width | fit-height"
+    }}
+  ]
+}}
+
 KPI / Text mark sheet (single summary number):
 {{
   "sheets": [
@@ -271,11 +410,17 @@ Note: Omit the "encodings" key entirely when no color/size/tooltip is requested.
 Note: Omit the "aggregation" key entirely when the default Sum aggregation applies.
 Note: For Text/KPI mark type, set column_field to null — the metric is a single number with no axis.
 Note: Omit "format" entirely when no special number formatting or font size is implied.
+Note: Omit "zoom" entirely when no zoom/fit keyword is used by the user.
+Note: Scatter uses column_field and row_field as MEASURES (both from measures list).
+Note: Pie uses color_field and size_field (not column_field/row_field).
+Note: BoxPlot uses row_field (measure) and detail_field (dimension).
+Note: Histogram uses row_field (measure) and optional bin_size and color_field.
+Note: ComboChart uses column_field (date dimension), bar_field and line_field (both measures).
 
 Rules:
 1. Use ONLY field names from the schema above — never invent fields.
-2. column_field comes from the dimensions list (or null for Text/KPI marks). It may be a single field (string) or an array of dimension fields for a multi-dimension breakdown (see Multi-Dimension Breakdown Rules); every field in the array must come from the dimensions list.
-3. row_field must come from the measures list.
+2. column_field comes from the dimensions list (or null for Text/KPI marks, or a MEASURE for Scatter). It may be a single field (string) or an array of dimension fields for a multi-dimension breakdown; every field in the array must come from the appropriate list.
+3. row_field must come from the measures list (except Scatter where both axes are measures).
 4. sort.field must come from the measures list (for field sort) or dimensions list (for alphabetical).
 5. filters[].field must come from the dimensions list.
 6. filters[].values must contain actual data values matching the field (use realistic values from sample_values if known).
@@ -283,11 +428,14 @@ Rules:
 8. encodings.size.field should be a measure (numeric field).
 9. encodings.tooltip fields can be from either dimensions or measures list.
 10. Create 1-3 sheets based on what the request asks for.
-11. When the request mentions a date/time dimension, prefer Line mark type.
+11. When the request mentions a date/time dimension, prefer Line mark type (or ComboChart if two measures are mentioned).
 12. Circle/Point mark types work best with size encoding (bubble charts).
 13. Return ONLY the JSON object — no markdown, no commentary.
 14. For Text mark type (KPI): column_field must be null, aggregation is required, format is optional.
 15. number_format: "$#,##0" for currency, "0.00%" for percentage, "#,##0" for plain integers.
+16. For Scatter: both column_field and row_field come from the MEASURES list, not dimensions.
+17. For Pie: color_field from dimensions, size_field from measures — do NOT use column_field/row_field.
+18. For ComboChart: column_field is a DATE dimension; bar_field and line_field are two different measures.
 
 Generate the blueprint now:"""
 
